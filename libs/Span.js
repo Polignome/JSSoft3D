@@ -175,14 +175,15 @@ class Span {
         
         
         if (texture===null) {
+            let clear_color=RGB(1,0,0);
             for (; start < this.end; start++) {
              rasterizer.GetActiveZBuffer()[span]=w;
-             rasterizer.GetActiveBuffer()[span]=RGB(255,255,255);
+             rasterizer.GetActiveBuffer()[span]=clear_color;
              span++;
           }
           return;
         }
-
+let s1=span;
         for (; start < this.end; start++)
 		{
         
@@ -192,17 +193,83 @@ class Span {
 			    let	z = 1.0 / w;
 			    let	s = (u * z);
 			    let	t = (v * z);
+                 
+			    //let uu=u*texture.width;//(s*texture.width)|0;
+    		    //let vv=v*texture.height;//(t*texture.height)|0;
+			    let uu=(Math.abs(s*texture.width)|0)%texture.width;
+    		    let vv=(Math.abs(t*texture.height)|0)%texture.height;
+        
+	//rasterizer.GetActiveBuffer()[span]= RGB(w*255,w*255,w*255);
+	  
+	    	//	rasterizer.GetActiveBuffer()[span]= this.t.getPixel(uu|0,vv|0);
+	    		rasterizer.GetActiveBuffer()[span]=this.t.getPixelL(uu|0,vv|0,w*4);
+	  
+             //  	rasterizer.GetActiveBuffer()[span]= AddRGtoRGB(this.t.getPixelL(uu|0,vv|0,w),RGB(c.x*255,c.y*255,c.z*255));
+        //       	rasterizer.GetActiveBuffer()[span]= AddRGtoRGB(RGB(c.x*255,c.y*255,c.z*255),RGB(w*255,w*255,w*255));
+                              
+//rasterizer.GetActiveBuffer()[span]= RGB(c.x*255+w,c.y*255+w,c.z*255+w);
 
 
-			    let uu=(s*texture.width)|0;
-    		    let vv=(t*texture.height)|0;
+			} 
+
+                span++;
+				u += this.du;
+				v += this.dv;
+   			    w += this.dw;
+              	c = c.add(this.dc);
+              	n = n.add(this.dn);
+
+		}
+	    		//rasterizer.GetActiveBuffer()[s1]= RGB(0,255,0)
+	    		//rasterizer.GetActiveBuffer()[span]= RGB(0,255,0)
+
+    }
+    RenderZ(span_renderer) {
+
+      
+        let rasterizer=span_renderer.rasterizer;
+        let c=this.c;
+        let n=this.n;
+        let u=this.u;
+        let v=this.v;
+        let w=this.w;
+        let start = this.start;
+        let texture=this.t;
+        let span=this.y*rasterizer.width()+start;
+        
+        
+        
+        if (texture===null) {
+            let clear_color=RGB(0,0,0);
+            for (; start < this.end; start++) {
+             rasterizer.GetActiveZBuffer()[span]=w;
+             rasterizer.GetActiveBuffer()[span]=clear_color;
+             span++;
+          }
+          return;
+        }
+
+        for (; start < this.end; start++)
+		{
+        
+            
+            if (rasterizer.PutBuffer(span,w))  
+            {
+                rasterizer.GetActiveZBuffer()[span]=w;
+			    let	z = 1.0 / w;
+			    let	s = (u * z);
+			    let	t = (v * z);
+
+
+			    let uu=((s*texture.width)|0)%texture.width;
+    		    let vv=((t*texture.height)|0)%texture.height;
         
 	
 	  
-	    	//	rasterizer.GetActiveBuffer()[span]= RGB(200,200,0);//this.t.getPixel(uu|0,vv|0);
-	    		rasterizer.GetActiveBuffer()[span]= this.t.getPixelL(uu|0,vv|0,w);
+	    //		rasterizer.GetActiveBuffer()[span]= RGB(w*255,w*255,w*255);//this.t.getPixel(uu|0,vv|0);
+//	    		rasterizer.GetActiveBuffer()[span]=this.t.getPixelL(uu|0,vv|0,w);
 	  
-               //		rasterizer.GetActiveBuffer()[span]= AddRGtoRGB(this.t.getPixelL(uu|0,vv|0,w),RGB(c.x*255,c.y*255,c.z*255));
+        //       		rasterizer.GetActiveBuffer()[span]= AddRGtoRGB(this.t.getPixelL(uu|0,vv|0,w),RGB(c.x*255,c.y*255,c.z*255));
 	  
 			} 
 				span++;
@@ -423,6 +490,8 @@ isOccludedRectFast(minX, maxX, minY, maxY, nodeNearW) {
           this.SetSize(this._rasterizer.width,this._rasterizer.height) ;
         }
         this.Init();  
+
+        
     } 
 
     SetSize(width=0,height=0) {
@@ -457,15 +526,17 @@ isOccludedRectFast(minX, maxX, minY, maxY, nodeNearW) {
 	    edge.color  = top.color.add(edge.dcolor.mul(subPix));
     }
 
+    AddPrimitive(primitive,texture) {
+      if (this._rasterizer._use_spanbuffer===true) this.AddPrimitive_span(primitive,texture); 
+      else this.AddPrimitive_no_span(primitive,texture);
+    }
 
-
-
- AddPrimitive(primitive,texture) // fehlerhaft
+    AddPrimitive_no_span(primitive,texture) // fehlerhaft
 {
 	// Find the top-most vertex
 	let verts=primitive.sverts;
-  
-  var lastVert=verts.length-1;
+
+    var lastVert=verts.length-1;
   var lTop=0;
   var rTop=0;
   
@@ -574,7 +645,145 @@ isOccludedRectFast(minX, maxX, minY, maxY, nodeNearW) {
             span.y = fb;
 			span.t=texture;
             
-         //   span.Render(this);
+            span.RenderZ(this);
+			// Step
+
+			le.u += le.du;
+			le.v += le.dv;
+			le.w += le.dw;
+			le.x += le.dx;
+            le.color = le.color.add(le.dcolor);
+            le.normal = le.normal.add(le.dnormal);
+
+			re.u += re.du;
+			re.v += re.dv;
+			re.w += re.dw;
+			re.x += re.dx;
+			re.normal = re.normal.add(re.dnormal);
+            fb++;
+			
+    		
+    }
+    
+   // console.log("End Loope");
+	}
+    }
+
+
+   AddPrimitive_span(primitive,texture) // fehlerhaft
+{
+	// Find the top-most vertex
+	let verts=primitive.sverts;
+
+    var lastVert=verts.length-1;
+  var lTop=0;
+  var rTop=0;
+  
+
+
+  for (let i=0;i<verts.length;i++)
+  {
+	verts[i].iy =  Math.ceil(verts[i].y);
+	 if (verts[i].y < verts[lTop].y) lTop = i;
+
+  }
+
+	// Make sure we have the top-most vertex that is earliest in the winding order
+
+	if (verts[lastVert].y == verts[lTop].y && verts[0].y == verts[lTop].y) lTop = lastVert;
+
+	rTop = lTop;
+
+	// Top scanline of the polygon in the frame buffer
+
+	var	fb = verts[lTop].iy; //* this.pitch;
+	
+
+	// Left & Right edges (primed with 0 to force edge calcs first-time through)
+
+	var	le = new Edge();
+    var re = new Edge();
+	le.height = 0;
+	re.height = 0;
+
+	// Render the polygon
+
+	var	done = false;
+	while(done==false)
+	{
+
+
+		if (!le.height)
+		{
+			let lBot = lTop - 1; 
+			if (lBot < 0) lBot = verts.length-1;
+             le.height = verts[lBot].iy - verts[lTop].iy;
+			
+            if (le.height < 0) return;
+			this.calcEdgeDeltas(le, verts[lTop], verts[lBot]);
+			lTop = lBot;
+			if (lTop == rTop) done = true;
+			if (lTop != rTop && done==true) return;
+		}
+
+		if (!re.height)
+		{
+			var rBot = rTop + 1; 
+      
+      if (rBot > lastVert) rBot = 0;
+			re.height = verts[rBot].iy - verts[rTop].iy;
+			if (re.height < 0) return;
+			this.calcEdgeDeltas(re, verts[rTop], verts[rBot]);
+			rTop = rBot;
+			if (lTop == rTop) done = true;
+			if (lTop != rTop && done==true) return;
+		}
+
+		// Get the height
+
+		var	height = Math.min(le.height, re.height)|0;
+
+		// Subtract the height from each edge
+
+		le.height -= height;
+		re.height -= height;
+
+        height=height | 0;
+
+		// Render the current trapezoid defined by left & right edges
+  
+
+		
+    while(((height--)|0) )
+		{
+
+
+            var span = new Span();
+
+			var		overWidth = 1.0 / (re.x - le.x);
+			span.du  = (re.u - le.u) * overWidth;
+			span.dv  = (re.v - le.v) * overWidth;
+			span.dw  = (re.w - le.w) * overWidth;
+            span.dc  = re.color.sub(le.color).mul(overWidth);
+            span.dn  = re.normal.sub(le.normal).mul(overWidth);
+
+			// Find the end-points
+
+			span.start = Math.ceil(le.x)|0;
+			span.end   = Math.ceil(re.x)|0;
+
+			// Texture adjustment (some call this "sub-texel accuracy")
+
+			var		subTex =  span.start - le.x;
+
+			span.u = (le.u + span.du * subTex) ;
+			span.v = (le.v + span.dv * subTex) ;
+			span.w = (le.w + span.dw * subTex);
+            span.c  = le.color.add(span.dc.mul(subTex));
+            span.n  = le.normal.add(span.dn.mul(subTex));
+            span.y = fb;
+			span.t=texture;
+            
 			this.AddSpan(span);
 			// Step
 
@@ -597,7 +806,7 @@ isOccludedRectFast(minX, maxX, minY, maxY, nodeNearW) {
     
    // console.log("End Loope");
 	}
-}
+   }
 
     AddSpan(span) {
         this._line[span.y].push(span);
@@ -624,15 +833,27 @@ isOccludedRectFast(minX, maxX, minY, maxY, nodeNearW) {
     get SpansIn() {return this._m_spans_in;}
     get SpansOut() {return this._m_spans_out;}
 
-    Render() {
-        
-        for (let y=0;y<this._line.length;y++)
-        this._m_spans_out=0;
-
-        for (let y=0;y<this._line.length;y++) {
-             this._line[y]=this.resolveScanline(this._line[y]);
+    Render(sort=true) {
+        this._spans_out=0;
+        this._spans_in=0;
+        if(sort) {
+           
+           for (let y=0;y<this._line.length;y++) 
+           { 
+              this._spans_in+= this._line[y].length;
+              this._line[y]=this.resolveScanline(this._line[y]);
+              for (let x=0;x<this._line[y].length;x++) this._line[y][x] .Render(this);
+              this._spans_out+=this._line[y].length;
+           }
+           return;
+        } 
+        for (let y=0;y<this._line.length;y++) 
+        {
+            this._spans_in+= this._line[y].length;
             for (let x=0;x<this._line[y].length;x++) this._line[y][x] .Render(this);
-            this._m_spans_out+=this._line[y].length;
+            this._spans_out+=this._line[y].length;
         }
+
+
     }
 }

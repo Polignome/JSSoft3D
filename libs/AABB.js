@@ -110,8 +110,8 @@ class AABB {
 
 
     getAABBCorners() {
-      const min = this.min;
-      const max = this.max;
+      const min = this._min; //_min is faster then min ;)
+      const max = this._max; //_max is faster then min ;) 
 
       return [
         new Vector3(min.x, min.y, min.z),
@@ -128,8 +128,8 @@ class AABB {
 
 projectAABBToScreen(xform, viewportWidth, viewportHeight) {
 
-    const min = this.min;
-    const max = this.max;
+    const min = this._min;
+    const max = this._max;
 
     // 8 Ecken (kein Heap-Alloc im Hotpath wäre noch optimierbar,
     // aber lassen wir es erstmal so für Klarheit)
@@ -211,81 +211,98 @@ projectAABBToScreen(xform, viewportWidth, viewportHeight) {
     };
 }
 
-
-/*
- projectAABBToScreen(xform, viewportWidth, viewportHeight) {
-
-    const min = this.min;
-    const max = this.max;
-
-    // 8 Ecken direkt lokal erzeugen (kein Array-Alloc im Hotpath)
-    const corners = [
-        [min.x, min.y, min.z],
-        [max.x, min.y, min.z],
-        [min.x, max.y, min.z],
-        [max.x, max.y, min.z],
-        [min.x, min.y, max.z],
-        [max.x, min.y, max.z],
-        [min.x, max.y, max.z],
-        [max.x, max.y, max.z],
-    ];
-
-    let minX =  Infinity;
-    let minY =  Infinity;
-    let maxX = -Infinity;
-    let maxY = -Infinity;
-    let minDepth =  Infinity;
-
-    let anyValid = false;
-
-    for (let i = 0; i < 8; i++) {
-
-        const c = corners[i];
-
-        // ---- World → Clip ----
-        const v = new Vector3(c[0], c[1], c[2]);
-        const clip = xform.concat(v);   // -> Vector4
-
-        const w = clip.w;
-        if (w <= 0.00001) continue;      // hinter Kamera / ungültig
-
-        const invW = 1.0 / w;
-
-        const ndcX = clip.x * invW;
-        const ndcY = clip.y * invW;
-        const ndcZ = clip.z * invW;
-
-        // ---- NDC → Screen ----
-        const sx = (ndcX * 0.5 + 0.5) * viewportWidth;
-        const sy = (1.0 - (ndcY * 0.5 + 0.5)) * viewportHeight;
-
-        minX = Math.min(minX, sx);
-        minY = Math.min(minY, sy);
-        maxX = Math.max(maxX, sx);
-        maxY = Math.max(maxY, sy);
-        minDepth = Math.min(minDepth, ndcZ);
-
-        anyValid = true;
-    }
-
-    if (!anyValid) return null;
-
-    // Clamp auf Viewport (optional aber praktisch)
-    minX = Math.max(0, Math.min(viewportWidth  - 1, minX));
-    maxX = Math.max(0, Math.min(viewportWidth  - 1, maxX));
-    minY = Math.max(0, Math.min(viewportHeight - 1, minY));
-    maxY = Math.max(0, Math.min(viewportHeight - 1, maxY));
-
-    
-    if (minX > maxX || minY > maxY) return null;
-
-    return {
-        minX, minY,
-        maxX, maxY,
-        minDepth
-    };
-}
-*/
+IntersectedByBounds(bounds,  tolerance  = 0) 
+{
+    return ((this._min.x - tolerance) <= (bounds._max.x + tolerance)) &&
+           ((this._min.y - tolerance) <= (bounds._max.y + tolerance)) &&
+           ((this._min.z - tolerance) <= (bounds._max.z + tolerance)) &&
+           ((this._max.x + tolerance) >= (bounds._min.x - tolerance)) &&
+           ((this._max.y + tolerance) >= (bounds._min.y - tolerance)) &&
+           ((this._max.z + tolerance) >= (bounds._min.z - tolerance));
 }
 
+BuildPolygons(s=0) {
+  let a = new Vector3(this._min.x-s, this._min.y-s, this._min.z-s);
+  let b = new Vector3(this._max.x+s, this._min.y-s, this._min.z-s);
+  let c = new Vector3(this._max.x+s, this._max.y+s, this._min.z-s);
+  let d = new Vector3(this._min.x-s, this._max.y+s, this._min.z-s);
 
+  let e = new Vector3(this._min.x-s, this._min.y-s, this._max.z+s);
+  let f = new Vector3(this._max.x+s, this._min.y-s, this._max.z+s);
+  let g = new Vector3(this._max.x+s, this._max.y+s, this._max.z+s);
+  let h = new Vector3(this._min.x-s, this._max.y+s, this._max.z+s);
+
+
+  let p0=new Polygon(new Array(new Vector3(a),new Vector3(b),new Vector3(c),new Vector3(d)));
+  let p1=new Polygon(new Array(new Vector3(h),new Vector3(g),new Vector3(f),new Vector3(e)));
+  let p2=new Polygon(new Array(new Vector3(h),new Vector3(e),new Vector3(a),new Vector3(d)));
+  let p3=new Polygon(new Array(new Vector3(g),new Vector3(c),new Vector3(b),new Vector3(f)));
+  let p4=new Polygon(new Array(new Vector3(h),new Vector3(d),new Vector3(c),new Vector3(g)));
+  let p5=new Polygon(new Array(new Vector3(f),new Vector3(b),new Vector3(a),new Vector3(e)));
+  
+  
+  p0.calcPlane();p0.SetNormalColor(1,0,1);p0._create_from_aabb=true;
+  p1.calcPlane();p1.SetNormalColor(1,0,1);p1._create_from_aabb=true;
+  p2.calcPlane();p2.SetNormalColor(1,0,1);p2._create_from_aabb=true;
+  p3.calcPlane();p3.SetNormalColor(1,0,1);p3._create_from_aabb=true;
+  p4.calcPlane();p4.SetNormalColor(1,0,1);p4._create_from_aabb=true;
+  p5.calcPlane();p5.SetNormalColor(1,0,1);p5._create_from_aabb=true;
+  
+
+  return new Array(p0,p1,p2,p3,p4,p5);
+
+
+}
+
+ClipPortal(portal) {
+  let a = new Vector3(this._min.x, this._min.y, this._min.z);
+  let b = new Vector3(this._max.x, this._min.y, this._min.z);
+  let c = new Vector3(this._max.x, this._max.y, this._min.z);
+  let d = new Vector3(this._min.x, this._max.y, this._min.z);
+
+  let e = new Vector3(this._min.x, this._min.y, this._max.z);
+  let f = new Vector3(this._max.x, this._min.y, this._max.z);
+  let g = new Vector3(this._max.x, this._max.y, this._max.z);
+  let h = new Vector3(this._min.x, this._max.y, this._max.z);
+
+
+  let p0=Ray.CalcPlaneBy3Vectors(a,b,c);
+  let p1=Ray.CalcPlaneBy3Vectors(h,g,f);
+  let p2=Ray.CalcPlaneBy3Vectors(h,e,a);
+  let p3=Ray.CalcPlaneBy3Vectors(g,c,b);
+  let p4=Ray.CalcPlaneBy3Vectors(h,d,c);
+  let p5=Ray.CalcPlaneBy3Vectors(f,b,a);
+  let cl=new Array(p0,p1,p2,p3,p4,p5);
+  
+
+  let port=new Portal(portal)  
+  
+
+
+
+//0,1 nichts
+//2 ja
+
+
+  for (let plane of cl) 
+{
+  
+     let result=plane.Classify(port.verts);
+     
+     if (result===SPANNING) {
+        let s=port.SplitByPlane(plane)
+        if (s[0]!=null) port=s[0];
+     }
+
+  }
+  port.calcPlane();
+  
+   return port;
+   
+
+
+}
+
+
+
+}

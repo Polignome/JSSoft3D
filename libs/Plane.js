@@ -127,6 +127,11 @@ class Ray {
     if (this._N==4)  { this._origin = new Vector4(a);return;}
 
 }
+
+
+  invert() {
+    this.calc(this.origin,this.vector);
+  }
   set vector(a) {this._nCalculated = false; 
                  this._lCalculated = false; 
                  this._dCalculated = false;
@@ -157,15 +162,15 @@ class Ray {
 
    toStr() {
     var s="N: "+this.N+"\n"+  
-          "o: "+this.origin.toStr()+"\n"+
-          "v: "+this.vector.toStr()+"\n"+
-          "n: "+this.normal.toStr()+"\n"+
-          "l: "+this.length+"\n"+
+        //  "o: "+this.origin.toStr()+"\n"+
+        //  "v: "+this.vector.toStr()+"\n"+
+        //  "n: "+this.normal.toStr()+"\n"+
+        //  "l: "+this.length+"\n"+
           "D: "+this.D+"\n";
           return s;
    }
   
-   
+
    distance(point) 
    {
        let r=new Ray(3);
@@ -174,6 +179,9 @@ class Ray {
        r.normal.y=-this.normal.y;
        r.normal.z=-this.normal.z;
        
+     
+
+
        return this.intersect(r)[1];
    }
 
@@ -268,6 +276,12 @@ class Ray {
         if (v instanceof Polygon)
          {
 //            console.log("------------- Prim");
+            return this.Classify(v.verts);  
+             
+        }
+
+        if (v instanceof Portal)
+         {
             return this.Classify(v.verts);  
              
         }
@@ -384,7 +398,10 @@ class Ray {
         }
 
 
-        if (a instanceof Primitive)
+
+
+
+        if (a instanceof Polygon)
         {
             
             var v=this.Split(a.verts);
@@ -425,11 +442,9 @@ class Ray {
             scaled = ((-this._D) - aDot) / ((bDot - aDot));
             var v=new Vert();
 
-            v.setWorld(new Vector3(a.world.x + (scaled * (b.world.x - a.world.x)),a.world.y + (scaled * (b.world.y - a.world.y)),a.world.z + (scaled * (b.world.z - a.world.z))));
-            v.setColor(new Vector3(a.color.x + (scaled * (b.color.x - a.color.x)),
-                                   a.color.y + (scaled * (b.color.y - a.color.y)),
-                                   a.color.z + (scaled * (b.color.z - a.color.z))));
-            v.setTexture( new Vector2(a.texture.x + (scaled * (b.texture.x - a.texture.x)),v.texture.y = a.texture.y + (scaled * (b.texture.y - a.texture.y))));      
+            v._world  = new Vector3(a.world.x + (scaled * (b.world.x - a.world.x)),a.world.y + (scaled * (b.world.y - a.world.y)),a.world.z + (scaled * (b.world.z - a.world.z)));
+            v._color  = new Vector3(a.color.x + (scaled * (b.color.x - a.color.x)),a.color.y + (scaled * (b.color.y - a.color.y)),a.color.z + (scaled * (b.color.z - a.color.z)));
+            v._texture= new Vector2(a.texture.x + (scaled * (b.texture.x - a.texture.x)),v.texture.y = a.texture.y + (scaled * (b.texture.y - a.texture.y)));      
 
            return v;            
     

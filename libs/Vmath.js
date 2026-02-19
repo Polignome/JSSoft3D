@@ -314,6 +314,10 @@ class Matrix {
     normalize()
     {
       this.setLength(1);
+      if (Math.abs(this._data[0])<Number.EPSILON)this._data[0]=0;
+      if (Math.abs(this._data[1])<Number.EPSILON)this._data[1]=0;
+      if (Math.abs(this._data[2])<Number.EPSILON)this._data[2]=0;
+      
     }
 
     setXVector(m)
@@ -562,6 +566,26 @@ class Vector3 extends Matrix {
 
 
   }
+   swap(swap_axis="")
+  {
+       if (swap_axis=="xy" || swap_axis=="yx") {
+           let t=this.y;
+           this.y=this.x;
+           this.x=t;
+       }
+
+       if (swap_axis=="xz" || swap_axis=="zx") {
+           let t=this.x;
+           this.x=this.z;
+           this.z=t;
+       }
+
+       if (swap_axis=="yz" || swap_axis=="zy") {
+           let t=this.y;
+           this.y=this.z;
+           this.z=t;
+       }
+      }
 }
 
 class Vector4 extends Matrix {
@@ -765,6 +789,16 @@ static translation(m)
 }
 
 class Matrix4x4 extends Matrix {
+
+  compare( M) {
+    if (M instanceof Matrix4x4) {
+        if (M.M != this.M && M.N != this.N) return false;
+        for (let i=0;i<this.Data.length;i++) if (M.Data[i] != this.Data[i]) return false;
+        return true;
+   }
+    return false;
+
+  }
   constructor(v0=undefined,v1=undefined,v2=undefined,v3=undefined,
               v4=undefined,v5=undefined,v6=undefined,v7=undefined,
               v8=undefined,v9=undefined,va=undefined,vb=undefined,

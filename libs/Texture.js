@@ -25,11 +25,11 @@ function CreateDummy( width,height,ra = 255,ga = 255,ba = 255,
   var screen_buffer= new Int32Array(width*height);
   var s=false;
   var seed=4;
-  for(let x = 0;x<width - 1;x++)
+  for(let x = 0;x<width ;x++)
   {
      if (x % cheker_size == 0) s =!s;
   
-    for(let y = 0;y<height - 1;y++)
+    for(let y = 0;y<height ;y++)
     {
       
       if (y % cheker_size == 0)  s = !s;

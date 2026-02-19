@@ -15,12 +15,19 @@ class Vert {
     get normal()  {return this._normal;}     
     get light()  {return this._light;}     
 
+    scale(v) {
+        let out=new Vert(this);
+        out._world.x*=v;
+        out._world.y*=v;
+        out._world.z*=v;
+        return out;
+    }
 
-    constructor(v) {
+    constructor(v,scale=1) {
         if (v instanceof Vert)
         {
             this._texture = new Vector2(v.texture);
-            this._world   = new Vector3(v.world);
+            this._world   = v._world.mul(scale);//new Vector3(v.world);
             this._screen  = new Vector4(v.screen);
             this._color   = new Vector3(v.color);
             this._normal  = new Vector3(v.normal);
@@ -31,7 +38,7 @@ class Vert {
         if (v instanceof Vector3)
         {
            this._texture = new Vector2();
-           this._world   = new Vector3(v);
+           this._world   = v.mul(scale);//new Vector3(v);
            this._screen  = new Vector4();
            this._color   = new Vector3(1,1,1);
            this._normal  = new Vector3();

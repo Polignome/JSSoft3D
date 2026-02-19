@@ -35,8 +35,10 @@ globalThis.assert = (()=> {
   
 
 
-
-
+function DebugOut(s)
+{
+  document.getElementById("debugout").value+=s;
+}
 
 
   function assert(a,b=undefined) {

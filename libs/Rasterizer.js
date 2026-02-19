@@ -6,128 +6,9 @@ const POLY_LINED_FILLED_ZEBUFFER    = 1<<4;
 const POLY_FILLED_ZEBUFFER    = 1<<5;
 const POLY_LINED = 1<<6;
 
-const MAX_HZB_LEVEL = 4; 
+
 const FIXED_POINT = 16;
-const ONE = 1 << FIXED_POINT;
 
-function fixmul( a,  b) {
-    return  ( a *  b >> FIXED_POINT);
-}
-
-function toFix( doubleval ) {
-    return  (doubleval * ONE)|0;
-}
-
-function intVal( intfix ) {
-     return intfix >> FIXED_POINT;
-}
-
-function doubleVal( intfix ) {
-     return  intfix / ONE;
-}
-
-
-
-class HierarchicalZBuffer {
-    constructor(width, height) {
-        this.levels = [];
-        this.buildEmpty(width, height);
-    }
-
-    buildEmpty(width, height) {
-        this.levels = [];
-        let w = width;
-        let h = height;
-
-        while (true) {
-            this.levels.push({
-                w, h,
-                z: new Float32Array(w * h)
-            });
-
-            if (w === 1 && h === 1) break;
-            w = Math.max(1, w >> 1);
-            h = Math.max(1, h >> 1);
-        }
-    }
-
-    // Level 0 mit echtem Z-Buffer füllen
-    setBaseLevel(zbuffer) {
-        this.levels[0].z.set(zbuffer);
-    }
-
-    // Mip-Kette aufbauen
-    build() {
-        for (let l = 1; l < this.levels.length; l++) {
-            const prev = this.levels[l - 1];
-            const cur  = this.levels[l];
-
-            for (let y = 0; y < cur.h; y++) {
-                for (let x = 0; x < cur.w; x++) {
-
-                    const x0 = x * 2;
-                    const y0 = y * 2;
-
-                    let minZ = Infinity;
-
-                    for (let dy = 0; dy < 2; dy++) {
-                        for (let dx = 0; dx < 2; dx++) {
-                            const px = x0 + dx;
-                            const py = y0 + dy;
-                            if (px < prev.w && py < prev.h) {
-                                const idx = py * prev.w + px;
-                                minZ = Math.min(minZ, prev.z[idx]);
-                            }
-                        }
-                    }
-
-                    cur.z[y * cur.w + x] = minZ;
-                }
-            }
-        }
-    }
-
-
-isOccludedRect(minX, maxX, minY, maxY, depth) {
-
-
-
-for (let level = Math.min(MAX_HZB_LEVEL, this.levels.length - 1);level >= 0; level--) 
-//    for (let level = this.levels.length - 1; level >= 0; level--) 
-{
-
-        const L = this.levels[level];
-        const scale = 1 << level;
-
-        const x0 = Math.floor(minX / scale);
-        const x1 = Math.floor(maxX / scale);
-        const y0 = Math.floor(minY / scale);
-        const y1 = Math.floor(maxY / scale);
-
-        let fullyCovered = true;
-
-        for (let y = y0; y <= y1 && fullyCovered; y++) {
-            for (let x = x0; x <= x1; x++) {
-                const idx = y * L.w + x;
-
-                // Wenn irgendwo noch Platz vor dem Occluder ist → sichtbar
-                if (depth > L.z[idx]) {
-                    fullyCovered = false;
-                    break;
-                }
-            }
-        }
-
-        // Wenn dieses Level schon komplett verdeckt ist → fertig
-        if (fullyCovered) return true;
-    }
-
-    return false;
-}
-
-
-
-}
 
 
 
@@ -136,10 +17,11 @@ for (let level = Math.min(MAX_HZB_LEVEL, this.levels.length - 1);level >= 0; lev
 
 class Rasterizer {
     constructor(canvas) {
-        this._edgeTable  = new Array;
-        this._spans  = new Array;
-        this._activeEdges= new Array();
         this._use_BVH =true;
+        this._use_zbuffer=true;
+        this._enable_culling=false;    //0=culling off 1==backface culling
+
+        
         this._xScale =  1;//0.0198;
         this._yScale =  1;//0.0170;
         this._canvas=canvas;
@@ -150,42 +32,55 @@ class Rasterizer {
         
         this._LOESCHEN=0;
 
-        this._primitives_in=0;
-        this._primitives_rendered=0;
-        this._primitives_mask_culled=0;
-        this._primitives_aabb_frustum_culled=0;
-        this._primitives_frustum_culled=0;
 
         this._spans_in=0;
         this._spans_rendered=0;
 
-        this._enable_culling=false;    //0=culling off 1==backface culling
 
         this._maxscale =0;
         this._maxscale = 0;
         this._maxscreenscaleinv = 0;
-        this._perspectiveCorrect=false;
-
-        this._dummy_texture = new Texture() ;
+        
       
-        this._zbuffer_old= new Float64Array();
-        this._zbuffer= new Float64Array();
-        this._hzbuffer= new HierarchicalZBuffer();
-        this._nbuffer= new Float32Array();
 
         this._max_depth=1.0;
         this._max_depth_h=this._max_depth/2;
         this.resize(this._canvas.width,this._canvas.height);
-        this._use_zbuffer=true;
+        
+    //    this._bhv=null;
 
-        this._bhv=null;
+        this._zbuffer= null;//new Float64Array();
+        this._hzbuffer= new HierarchicalZBuffer();
+        this._spanrenderer= new SpanRenderer(this);
 
-         
-         this._spanrenderer= new SpanRenderer(this);
+        this._primitives=new Array();
+        this._bvh= new BVH(this);
+
+        this._z_test_buffer= null;//new Float64Array();
+
+
+        this._dummy_texture = new Texture() ;
      
-         //this._occlusionMask= new OcclusionMask(100,200); 
-         this._primitives=new Array();
+       this.xform = new Matrix4x4();
+      this.frustum = new Frustum();
 
+
+       this._primitives_in =0;
+       this._primitives_rendered = 1;
+       this._node_hzb_culled = 2;
+       this._node_aabb_frustum_culled = 3;
+       this._node_aabb_project_culled = 4;
+       this._primitives_back_face_culling = 5;
+       this._primitives_frustum_culling=6;
+       this._primitives_transform_culling=7;
+       this._primitives_project_culling=8;
+
+       this._use_node_frustum_culling=true;
+       this._use_node_hzbuffer_culling=true;
+
+        this._clear_spanbuffer=true;
+        this._use_spanbuffer=true;
+        
         this._canvas.Canvas.addEventListener("resize", (ev) => {
             let {width, height } = ev;
             this.resize(width,height);
@@ -198,39 +93,59 @@ class Rasterizer {
     
    return this._hzbuffer.isOccludedRect(minX, maxX, minY, maxY, minDepth);
 
-    const width = this.width();
-    // console.log("-> ",minX, maxX, minY, maxY, minDepth)
-    for(let y = minY; y <= maxY; y++) {
-        for(let x = minX; x <= maxX; x++) {
-            const idx = y * width + x;
-           // this._zbuffer_old[idx]=minDepth;
-            if(minDepth > this._zbuffer_old[idx]) return false; // sichtbar
-        }
-    }
-    return true; // vollständig verdeckt
+ 
 }
+ 
 
-    FlipZBuffer() {
-       let temp=this._zbuffer;
-       this._zbuffer = this._zbuffer_old;
-       this._zbuffer_old=temp;
+   Reset() {
+    this._primitives= new Array();
+    this._bvh       = new BVH(this);
 
-    }
+   }
 
    getStatistic() {
-    return {prims_in: this._primitives_in, 
-            prims_ren: this._primitives_rendered,
-            prims_mask: this._primitives_mask_culled,
-            prims_aabb_frus: this._primitives_aabb_frustum_culled
-        };
+    
+    return { 
+       primitives_in:                this._primitives_in,
+       primitives_renderd:           this._primitives_rendered,
+       mode_hzb_culled:              this._node_hzb_culled,
+       node_aabb_frustum_culled:     this._node_aabb_frustum_culled,
+       node_aabb_project_culled:     this._node_aabb_project_culled,
+       primitives_back_face_culling :this._primitives_back_face_culling,
+       primitives_frustum_culling:   this._primitives_frustum_culling,
+       primitives_transform_culling :this._primitives_transform_culling,
+       primitives_project_culling:   this._primitives_project_culling,
+       spans_in:                     this._spanrenderer._spans_in,
+       spans_out:                    this._spanrenderer._spans_out
+      };
+
    }
 
 
-   Start() {
-        this._spanrenderer.Start();
-        this._occlusionMask.clear();
-        this._hzbuffer.setBaseLevel(this._zbuffer_old);
+   Start(camera) {
+
+        if (this._zbuffer==null) {
+           this._zbuffer= new Float64Array(this.width()*this.height());
+           this._zbuffer.fill(this._max_depth);
+           this._hzbuffer= new HierarchicalZBuffer(this.width(),this.height());
+        }
+        
+        this._hzbuffer.setBaseLevel(this._zbuffer);
         this._hzbuffer.build();
+
+        
+        if (this._use_spanbuffer)   {
+             this._spanrenderer.Start();
+        } else {
+            this.ClearZBuffer();
+            this.canvas.Clear();
+        }
+       // WriteToLog(this._zbuffer);
+      this.xform=camera.GetCombinedMatrix();
+      this.frustum = new Frustum();
+      this.frustum.createByCam(cam);
+      this.camera=camera;
+
 
    }
     get SpansIn()  {return this._spanrenderer._m_spans_in;}
@@ -247,7 +162,15 @@ class Rasterizer {
     this._primitives=new Array();
    }
    
+   get primitives() {return this._primitives;}
+   get HZB() {return this._hzbuffer;}
+
    AddPrimitive(primitive) {
+          if (Array.isArray(primitive)) 
+          {
+            for (let p of primitive) this.AddPrimitive(p);
+            return;
+          }
           if (!(primitive instanceof PrimitiveBase)) return;
           this._primitives.push(primitive);
           this._primitives_in=this._primitives.length;
@@ -273,8 +196,175 @@ class Rasterizer {
        }
     }
     
+   ZTestBufferToScreen() {
+        for (let y=0;y<this._height;y++) {
+          for (let x=0;x<this._width;x++) 
+          {  
+            var c= this._z_test_buffer[x+y*this._width];
+            c=Math.min((c*255.0)|0,255);
+            this._canvas.PutPixel(x,y,RGBA(c,c,c,0xff));
+        
+          }
+       }
+    }
+    
+
+
+
+
+DrawLine(a,b) {
+                var x1=a.x|0;
+                var y1=a.y|0;
+                var z1=a.z;
+                var x2=b.x|0;
+                var y2=b.y|0;
+                var z2=b.z;
+
+                
+                var dx = Math.abs(x2 - x1);
+                var dy = Math.abs(y2 - y1);
+                var dz = (z2 - z1);
+                var sx = (x1 < x2) ? 1 : -1;
+                var sy = (y1 < y2) ? 1 : -1;
+                var err = dx - dy;
+                var l=Math.sqrt(dx*dx+dy*dy);
+                var sz= dz/l;
+                
+                var cr1=a.color.x*255;
+                var cg1=a.color.y*255;
+                var cb1=a.color.z*255;
+                var cr2=b.color.x*255;
+                var cg2=b.color.y*255;
+                var cb2=b.color.z*255;
+
+                
+                var dr= (cr2-cr1)/l;
+                var dg= (cg2-cg1)/l;
+                var db= (cb2-cb1)/l;
+                
+                
+                if (this.SetBuffer(x1,y1,z1)) canvas.PutPixel(x1,y1,RGBA(cr1|0,cg1|0,cb1|0,0xff));
+              //  return;
+                while (!((x1 == x2) && (y1 == y2))) {
+                    var e2 = err << 1;
+                    if (e2 > -dy) {
+                        err -= dy;
+                        x1 += sx;
+                    }
+                    if (e2 < dx) {
+                        err += dx;
+                        y1 += sy;
+                    }
+
+                    // Set coordinates
+                    cr1+=dr;
+                    cg1+=dg;
+                    cb1+=db;
+                    
+                    z1+=sz;
+                    
+
+                    if (this.SetBuffer(x1,y1,z1)) canvas.PutPixel(x1,y1,RGBA(cr1|0,cg1|0,cb1|0,0xff));
+                    
+                  }
+            }
+
+
+  Project(verts) {
+            
+            let sverts= new Array(verts.length);
+            
+            for (let j = 0; j <verts.length; j++)
+            {
+                var	ow = 1.0 /verts[j].screen.w;
+                sverts[j]       = new SVec();
+    
+                sverts[j].color = verts[j].color;
+                sverts[j].x     = (this.screenCenterX() + verts[j].screen.x * ow * this.screenCenterX() * this.xScale())  ;
+                sverts[j].y     = (this.screenCenterY() - verts[j].screen.y * ow * this.screenCenterY() * this.yScale()) ;
+                sverts[j].z     = verts[j].screen.w;
+                sverts[j].w     = ow;
+    
+                if (sverts[j].x < -0.5)                        sverts[j].x = -0.5;
+                if (sverts[j].x > (this.width() - 0.5))  sverts[j].x = this.width() - 0.5;
+                if (sverts[j].y < -0.5)                        sverts[j].y = -0.5;
+                if (sverts[j].y > (this.height() - 0.5)) sverts[j].y = this.height() - 0.5;
+    
+//        		if (rasterizer.PerspectiveCorrect() == 0) ow = 1.0;
+//      		if (this.render_type != POLY_PERSPECTIVE_TEXTURED) ow = 1.0;
+        
+                sverts[j].u = verts[j].texture.x * ow;
+                sverts[j].v = verts[j].texture.y * ow;
+                
+                if (j<verts.length-1) sverts[j].next = sverts[j+1];
+            }
+            //_sverts[verts.length-1].next = undefined;
+           return sverts;       
+    }
+
+  TransformToScreen(verts) {
+            var	codeOff = -1;
+            var	codeOn = 0;
+            var code=0;
+            
+            for (let j = 0; j < verts.length; j++)
+            {
+                let w= verts[j].world;
+                var s= this.xform.concat(w);
+                
+                verts[j].screen.x=s.x;
+                verts[j].screen.y=s.y;
+                verts[j].screen.z=s.z;
+                verts[j].screen.w=s.w
+                
+                
+                code =	(s.x >  s.w ?  1:0) | (s.x < -s.w ?  2:0) |
+                        (s.y >  s.w ?  4:0) | (s.y < -s.w ?  8:0) |
+                        (s.z <  0.0 ? 16:0) | (s.z >  s.w ? 32:0);
+                codeOff &= code;
+                codeOn  |= code;
+            }
+            
+            
+            return new Array(codeOff,codeOn);
+    }
+
+DrawLine3D(a,b,c1=new Vector3(1,0,0),c2=undefined) {
+  let v0=new Vert(a);
+  let v1=new Vert(b);
+  v0._color.x=v1._color.x=c1.x;
+  v0._color.y=v1._color.y=c1.y;
+  v0._color.z=v1._color.z=c1.z;
+  if (c2) {
+    v1._color.x=c2.x;
+    v1._color.y=c2.y;
+    v1._color.z=c2.z;
+  }
+
+  let aa=[v0,v1];
+ // let aa=this.frustum.ClipLine(v0,v1);
+  if (!aa ||!aa[0]||!aa[1]) return;
+  let o=this.TransformToScreen(aa);
+  if (o[0]) return;
+  let s=this.Project(aa);
+  this.DrawLine(s[0],s[1]);
+
+}
     
     ZBufferToScreenOLD(posx=0,posy=0,scale=1) {
+
+        for (let y=0;y<this._height;y++) {
+          for (let x=0;x<this._width;x++) 
+          {  
+            var c= this._hzbuffer.help[x+y*this._width];
+            
+            this._canvas.PutPixel(x,y,c);
+        
+          }
+       }
+       return;
+
+
         let pp=0;   
         for (let l=0;l<this._hzbuffer.levels.length;l++)  
         {
@@ -284,60 +374,47 @@ class Rasterizer {
               for (let x=0;x<level.w;x++) {
                 var c=level.z[x+y*level.w];
                 c=Math.min((c*255.0)|0,255);
-        
-        
                 this._canvas.PutPixel(pp+posx+x>>scale,posy+y>>scale,RGBA(c,c,c,0xff));
-                
               }
             }
           pp+=level.w;
         }       
-        return;
-        
-        
-        for (let y=0;y<this._height;y++) {
-          for (let x=0;x<this._width;x++) 
-          {  
-            var c=this._zbuffer_old[x+y*this._width];
-            c=Math.min((c*255.0)|0,255);
-            this._canvas.PutPixel(posx+x>>scale,posy+y>>scale,RGBA(c,c,c,0xff));
-        
-          }
-    }
-    }
-
-
-    NBufferToScreen() {
-        
-        
-        for (let y=0;y<this._height;y++) {
-           for (let x=0;x<this._width;x++) 
-           {
-              var c=(this._nbuffer[x+y*this._width]*255.0)|0;
-              this._canvas.PutPixel(x,y,RGBA(c,c,c,0xff));
-        
-          }
-        }
+  
+    
     }
 
    
-    BuildBHV() {
-        if (!this._use_BVH) return;
-        this._bhv=buildBVH(this._primitives);
+    BuildBVH() {
+       
+       // this._bhv=buildBVH(this._primitives);
+       this._bhv= new BVH(this); 
+       this._bhv.build(this._primitives);
     }
-   
+
+    
+    BuildBSP() {
+       this._bhv= new BSPTree(this._primitives); 
+    }
+
+
    ClearZBuffer() {
-    this._zbuffer.fill(this._max_depth/2);
-   }
+    this._zbuffer.fill(-(this._max_depth/2));
+    this._z_test_buffer.fill(-(this._max_depth/2));
+
+}
    
    SetBuffer(x,y,z) {
     if (z<0|| z>=this._height*this._width) return false;
-    
     if (z<=this._zbuffer[x+y*this._width]) return false;
     this._zbuffer[x+y*this._width]=z;
     return true;
- }
+   }
 
+   PutBuffer(pos,z) {
+    if (z<=this._zbuffer[pos]) return false;
+    this._zbuffer[pos]=z;
+    return true;
+  }
 
     PutPixel(x,y,color) {
         this._canvas.PutPixel(x,y,color);
@@ -350,112 +427,26 @@ class Rasterizer {
 
     GetActiveZBuffer() {
        return this._zbuffer ;
-
     }
 
-    GetActiveNBuffer() {
-       return this._nbuffer ;
-
-    }
-
- PutBuffer(pos,z) {
-     let zz=this._max_depth_h-z;
-    if (zz>=this._zbuffer[pos]) return false;
-    this._zbuffer[pos]=zz;
-     return true;
-
-}
 
 
 
-get maxscal() {return this._maxscale;}
+
+
+    get maxscal() {return this._maxscale;}
     get maxscreenscaleinv() {return this._maxscreenscaleinv;}
 
-    RenderPrimitives(camera) {
-         
-        this._LOESCHEN+=0.001;
-    
-    
-        var xform=cam.GetCombinedMatrix();
-        var frustum = new Frustum();
-        frustum.createByCam(cam);
-        
-        
+    RenderPrimitives() {
+      this._clear_spanbuffer= this._bhv.render(this.camera,this);
+    } 
 
-        if (this._use_BVH)
-        {
-           
-      
-
-
-
-/*
-
-            //let primitives =traverseBVH_FrontToBack(this._primitives,this._bhv,frustum,cam) ;
-            let primitives =traverseBVH_FrontToBack2(this._primitives,this._bhv,frustum,xform,this._width,this._height) ;
-            this._primitives_after_bvh=primitives.length;
-            for (let i=0;i<primitives.length;i++) {
-        		this.primitives_in++
-                 let current_primitive=primitives[i];
-                 
-   		        let res=current_primitive.plane.Classify(cam.position);
-                if (res==BACK) continue;
-                
-                let result=current_primitive.ClipByFrustum(frustum);
-                if (result[1]<0 || result[0]===undefined) continue;
-                if (result[0].verts.length<3) continue;
-                let cliped_primitive=result[0];
-                this._primitives_cliped++;
-
-                let o=cliped_primitive.TransformToScreen(xform);
-                if (o[0]) continue;
-                if (!cliped_primitive.Project(this)) continue;    
-                this._primitives_visible++;
-                this._spanrenderer.AddPrimitive(cliped_primitive,this._dummy_texture) ;            
-            }
-            */
-
-traverseBVH_OcclusionRender(
-    this._primitives,
-    this._bhv,
-    frustum,
-    cam,
-    xform,
-    this._width,
-    this._height,
-    this
-);
-         
-        } else {
-    
-             for (let i=0;i<this._primitives.length;i++) {
-        		this._primitives_in++
-                let current_primitive=this._primitives[i];
-                
-                if (frustum.intersectsAABB(aabb)) continue;
-   		        let res=current_primitive.plane.Classify(cam.position);
-                if (res==BACK) continue;
-                let result=current_primitive.ClipByFrustum(frustum);
-                if (result[1]<0 || result[0]===undefined) continue;
-                if (result[0].verts.length<3) continue;
-                let cliped_primitive=result[0];
-                this._primitives_cliped++;
-
-                let o=cliped_primitive.TransformToScreen(xform);
-                if (o[0]) continue;
-                if (!cliped_primitive.Project(this)) continue;    
-                this._primitives_visible++;
-                this._spanrenderer.AddPrimitive(cliped_primitive,this._dummy_texture) ;            
-
-            }
-        }
-       
-       } 
 
     Render() {
-        this._spanrenderer.Render();
-         // Node als Occluder markieren
-         
+        if (this._use_spanbuffer) this._spanrenderer.Render();
+
+
+  
     }
 
     width() {return this._width; } 
@@ -468,7 +459,7 @@ traverseBVH_OcclusionRender(
     yScale() {return this._yScale;}
 
     resize(width,height) {
-
+        this._clear_spanbuffer=true;
         if (this._width==width && this._height==height) return;
         this._width=width|0;
         this._height=height|0;
@@ -476,19 +467,13 @@ traverseBVH_OcclusionRender(
         this._screenCenter_y=(this._height/2)|0;
 
         this._zbuffer= new Float64Array(this.width()*this.height());
-        this._zbuffer_old= new Float64Array(this.width()*this.height());
-        this._hzbuffer= new HierarchicalZBuffer(this.width(),this.height());
         this._zbuffer.fill(this._max_depth);
-        this._zbuffer_old.fill(this._max_depth);
-
-        this._nbuffer= new Float32Array(this.width()*this.height());
-        this._nbuffer.fill(this._max_depth);
         
-        this._occlusionMask= new OcclusionMask(this.width(),this.height());
-        console.log("Resize ",this.width(),this.height())
-        console.log("Resize ",this._occlusionMask.width,this._occlusionMask.height," -> ",this._occlusionMask.tilesX,this._occlusionMask.tilesY)
-     
-     
+        this._hzbuffer= new HierarchicalZBuffer(this.width(),this.height());
+
+        console.log("RESize :"+this._zbuffer.length);
+        
+        
     }
   
     get canvas() {return this._canvas;}

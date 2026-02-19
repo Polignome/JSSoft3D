@@ -1,7 +1,7 @@
 
 function RGBToRed(rgb)          {return ((rgb & 0x000000FF) >> 0);}
-function RGBToGreen(rgb)         {return ((rgb & 0x0000FF00) >> 8);}
-function RGBToBlue(rgb)        {return ((rgb & 0x00FF0000) >> 16);}
+function RGBToGreen(rgb)        {return ((rgb & 0x0000FF00) >> 8);}
+function RGBToBlue(rgb)         {return ((rgb & 0x00FF0000) >> 16);}
 function RGBToAlpha(rgb)        {return ((rgb& 0xFF000000) >> 24)&0x0ff;}
 
 function RGBA(r,g,b,a)          {return (((a&0x0ff)<<24) | ((b&0x0ff)<<16) | ((g&0x0ff)<<8 ) | ((r&0x0ff)));}
@@ -75,7 +75,9 @@ DrawRec(x1, y1, x2, y2, color) {
   this.DrawLine(x2, y2, x1, y2, color)
   this.DrawLine(x1, y2, x1, y1, color)
 }
-  DrawLine(x1, y1, x2, y2, color) {
+
+
+DrawLine(x1, y1, x2, y2, color) {
     // Differenzen berechnen
     
     let dx = Math.abs(x2 - x1);

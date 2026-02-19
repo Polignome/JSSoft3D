@@ -5,6 +5,10 @@ class PrimitiveBase {
         this._verts= new Array();
         this._sverts= new Array();
         this._render_type=POLY_LINED;
+        this._was_best_splitter=false;
+        this._can_not_be_splitter=false;
+        this._potential_portal=true;
+        this._create_from_aabb=false;
     }
 
 
@@ -69,7 +73,7 @@ class Polygon extends PrimitiveBase {
     /**
      * function 
      */
-    constructor (p) {
+    constructor (p,invert=false,scale=1) {
             super();
            // this._verts= new Array();
            // this._sverts= new Array();
@@ -80,19 +84,38 @@ class Polygon extends PrimitiveBase {
             this._recal_center=true;
             this._counterClock=true;
             this._screen_center = new Vector4();
-    
-    
+            this._node_id=-1;               
+            this._create_from_aabb=false;
+           
          
             if (p instanceof Polygon) {
-                for (let i=0;i<p.verts.length;i++) 
-                {
-                    var pp=new Vert(p.verts[i]);
-                    this._verts.push(pp);
+
+  
+                 if (!invert) {
+                    for (let i=0;i<p.verts.length;i++) 
+                    {
+                       var pp=new Vert(p.verts[i],scale);
+                       this._verts.push(pp);
+                    }
+                } else {
+                    for (let i=p.verts.length-1;i>-1;i--) 
+                    {
+                       var pp=new Vert(p.verts[i],scale);
+                       this._verts.push(pp);
+                    }
+
+
                 }
-                    this.calcPlane();
+                this._plane=new Ray(p._plane);
+                //this.calcPlane();
                 this.calcCenterOfMass();
+                this.SetObjectMatrix(p.GetObjectMatrix());
+                this._was_best_splitter=p._was_best_splitter;
+                this._can_not_be_splitter=p._can_not_be_splitter;
+                this._render_type=p._render_type;
+                this._potential_portal=p._potential_portal;
+                this._create_from_aabb=p._create_from_aabb;
     
-                this.SetObjectMatrix(this.GetObjectMatrix());
                 return;          
             }
             
@@ -101,13 +124,37 @@ class Polygon extends PrimitiveBase {
             {
                 var ve=new Vert();
                 var vv=new Vector3();
-                for (let i=0;i<p.length;i++) {
+                if (!invert) {
+                  for (let i=0;i<p.length;i++) {
                     if (p[i] instanceof Vert ||  p[i] instanceof Vector3)
-                        this._verts.push(new Vert(p[i]))
+                    {
+                       let pp = new Vert(p[i]);
+                       pp.world.x=pp.world.x*scale;
+                       pp.world.y=pp.world.y*scale;
+                       pp.world.z=pp.world.z*scale;
+
+                        this._verts.push(pp)
+                    }
+                  }
+                } else {
+
+                  for (let i=p.length;i>-1;i--) {
+                    if (p[i] instanceof Vert ||  p[i] instanceof Vector3)
+                    {
+                       let pp = new Vert(p[i]);
+                       pp.world.x=pp.world.x*scale;
+                       pp.world.y=pp.world.y*scale;
+                       pp.world.z=pp.world.z*scale;
+
+                        this._verts.push(pp)
+                    }
+
+                    }
                 }
     
                 this.calcPlane();
                 this.calcCenterOfMass();
+                this.identity();
        
                 return;          
             }
@@ -136,7 +183,14 @@ class Polygon extends PrimitiveBase {
         return p;
     }
 
+    CoppyAttribs(p,copy_best_splitter=true) {
+      if(copy_best_splitter)  this._was_best_splitter=p._was_best_splitter;
+        this._can_not_be_splitter=p._can_not_be_splitter;
+        this._render_type=p._render_type;
+        this._potential_portal=p._potential_portal;
+        this._create_from_aabb=p._create_from_aabb;
 
+    }
     clalcAABB() {
         return new AABB(this);
     }
@@ -515,6 +569,20 @@ class Polygon extends PrimitiveBase {
             }
     
         }
+
+        SetNormalGray()
+        {
+            this.calcPlane();
+            let n = this._plane.normal.mul(0.5).add(new Vector3(0.5,0.5,0.5)); 
+            let g=LUMA_REC709(n.x,n.y,n.z);
+            for (let i=0;i<this.verts.length;i++)
+            {
+                this.verts[i]._color.x=g;
+                this.verts[i]._color.y=g;
+                this.verts[i]._color.z=g;
+            }
+    
+        }
     /**
      * function 
      */
@@ -562,11 +630,11 @@ class Polygon extends PrimitiveBase {
       return FRONT;
      }
     
-    
-     SplipPolyByPlane(plane,poly) 
+
+     ClipPolyByPlane(plane,poly) 
      {
        var npoly=new Polygon();
-       npoly.render_type=poly.render_type;
+       npoly.CoppyAttribs(this,false);
     
        for (let i=0;i<poly.verts.length;i++)
        {
@@ -614,6 +682,93 @@ class Polygon extends PrimitiveBase {
         return npoly;
      }
     
+
+
+
+
+
+
+
+SplitPolyByPlane(plane) 
+     {
+       var fpoly=new Polygon();
+       var bpoly=new Polygon();
+
+       fpoly.CoppyAttribs(this,false);
+       bpoly.CoppyAttribs(this,false);
+
+       for (let i=0;i<this.verts.length;i++)
+       {
+         var j=(i+1) % this.verts.length;
+         var v0=this.verts[i];
+         var v1=this.verts[j];
+         var res0=plane.Classify(v0);
+         var res1=plane.Classify(v1);
+    
+         
+         if (res0==COPLANAR ) {
+           fpoly.AddVert(new Vert(v0)); 
+           bpoly.AddVert(new Vert(v0)); 
+         }
+    
+         if (res0==FRONT) 
+         { 
+           fpoly.AddVert(new Vert(v0)); 
+         }
+
+         if (res0==BACK) 
+         { 
+           bpoly.AddVert(new Vert(v0)); 
+         }
+         
+
+
+
+
+         if ((res0==FRONT && res1==BACK) || (res1==FRONT && res0==BACK))
+         {
+           var aDot=v0.world.dot(plane.normal);
+           var bDot=v1.world.dot(plane.normal);
+           var scaled = ((-plane.D) - aDot) / ((bDot - aDot));
+           var v=new Vert();
+    
+           v.world = new Vector3(v0.world.x + (scaled * (v1.world.x - v0.world.x)),
+                                 v0.world.y + (scaled * (v1.world.y - v0.world.y)),
+                                 v0.world.z + (scaled * (v1.world.z - v0.world.z)));
+    
+           v.color = new Vector3((v0.color.x + (scaled * (v1.color.x - v0.color.x))),
+                                 (v0.color.y + (scaled * (v1.color.y - v0.color.y))),
+                                 (v0.color.z + (scaled * (v1.color.z - v0.color.z))) );
+    
+    
+                              
+            v.texture = new Vector2(v0.texture.x + (scaled * (v1.texture.x - v0.texture.x)),v0.texture.y + (scaled * (v1.texture.y - v0.texture.y)));      
+    
+           fpoly.AddVert(new Vert(v));
+           bpoly.AddVert(new Vert(v));
+         }
+       }  
+       bpoly.SetNormalColor(1,0,0);
+       fpoly.SetNormalColor(0,1,0);
+       
+       if (fpoly.verts.length < 3) fpoly=null;
+        else fpoly.calcPlane();
+
+       if (bpoly.verts.length < 3) bpoly=null;
+        else bpoly.calcPlane();
+
+        return [fpoly,bpoly];
+     }
+    
+
+
+
+
+
+
+
+
+
      ClipByFrustum (frustum){
     
         var p=this;
@@ -625,7 +780,8 @@ class Polygon extends PrimitiveBase {
       for (let i=0;i<frustum.planes.length;i++)
       {
          if (frustum.planes[i].Classify(p)==SPANNING) {
-           var p2=this.SplipPolyByPlane(frustum.planes[i],p);
+
+           var p2=this.ClipPolyByPlane(frustum.planes[i],p);
            if (p2!=undefined) p=p2;
             clip=1;
           }
