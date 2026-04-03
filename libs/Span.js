@@ -11,13 +11,16 @@ class Edge {
         if (dx!=undefined) this._dx=dx; else this._dx=0; 
 		if (height!=undefined) this._height=0; 
 		else this._height=0;
-
+        this._aplha=1.0;
+        this._caplha=1.0;
 		this._color=new Vector3(0,0,0);
 		this._normal=new Vector3(0,0,0);
 		this._light=new Vector3(0,0,0);
 		this._dcolor=new Vector3(0,0,0);
 		this._dnormal=new Vector3(0,0,0);
 		this._dlight=new Vector3(0,0,0);
+		
+		
     }
 
 	set color(a)   {this._color  =new Vector3(a.x,a.y,a.z);}
@@ -26,14 +29,18 @@ class Edge {
 	set dcolor(a)  {this._dcolor =new Vector3(a.x,a.y,a.z);}
 	set dnormal(a) {this._dnormal=new Vector3(a.x,a.y,a.z);}
 	set dlight(a)  {this._dlight =new Vector3(a.x,a.y,a.z);}
-  
-	get color() {return new Vector3(this._color);}
+	set alpha(a)   {this._aplha=a;}
+	set dalpha(a)   {this._daplha=a;}
+
+    get color() {return new Vector3(this._color);}
 	get normal() {return new Vector3(this._normal);}
 	get light() {return new Vector3(this._light);}
 	get dcolor() {return new Vector3(this._dcolor);}
 	get dnormal() {return new Vector3(this._dnormal);}
 	get dlight() {return new Vector3(this._dlight);}
-	  
+	get alpha()   {return this._aplha;}
+	get dalpha()   {return this._daplha;}
+
 	
    set u(a) {this._u=a;}
    set du(a) {this._du=a;}
@@ -73,6 +80,9 @@ class Span {
         this._dc=new Vector3();     // color pro Pixel (oder pro x)
         this._t=null;               // Zeiger auf texture
         this._a=1;                  // Attrib 0=background
+        this._index=-1;
+        this._alpha = 1.0;          // Transparents
+        this._texture=null;
     }
     
     get du()  {return this._du;}         // texure 
@@ -81,8 +91,14 @@ class Span {
     get dn()  {return new Vector3(this._dn);}
     get dc()  {return new Vector3(this._dc);}
 
+    get alpha() { return this._alpha; }
+    set alpha(a) { this._alpha = a; }
+
     get start() {return this._start;}
     get end()  {return this._end;}
+
+    get index()  {return this._index;}
+    set index(a)  {this._index=a;}
 
     get u() {return this._u;}
     get v() {return this._v;}
@@ -135,7 +151,8 @@ class Span {
         s. end = this.end;
         s. y = this.y;
         s. t  = this.t;
-
+        s.index   = this.index;
+        s.alpha = this.alpha;
         return s;
     }
 
@@ -153,6 +170,7 @@ class Span {
         s.v = this._v + dx * this._dv;
         s.w = this._w + dx * this._dw;
 
+        s.alpha = this._alpha + dx * this._dalpha;
         s.n = this._n.add(this._dn.mul(dx));
         s.c = this._c.add(this._dc.mul(dx));
 
@@ -168,6 +186,7 @@ class Span {
         let u=this.u;
         let v=this.v;
         let w=this.w;
+        let a=this.alpha;
         let start = this.start;
         let texture=this.t;
         let span=this.y*rasterizer.width()+start;
@@ -179,37 +198,33 @@ class Span {
             for (; start < this.end; start++) {
              rasterizer.GetActiveZBuffer()[span]=w;
              rasterizer.GetActiveBuffer()[span]=clear_color;
+             rasterizer.GetActiveIBuffer()[span]=this._index;
              span++;
           }
           return;
         }
-let s1=span;
+        
+        
+        
+        let s1=span;  
+
         for (; start < this.end; start++)
 		{
         
             rasterizer.GetActiveZBuffer()[span]=w;
-        //    if (rasterizer.PutBuffer(span,w))  
+            rasterizer.GetActiveIBuffer()[span]=this._index;
             {
 			    let	z = 1.0 / w;
 			    let	s = (u * z);
 			    let	t = (v * z);
-                 
-			    //let uu=u*texture.width;//(s*texture.width)|0;
-    		    //let vv=v*texture.height;//(t*texture.height)|0;
+			    let	aa = (a * z);
 			    let uu=(Math.abs(s*texture.width)|0)%texture.width;
     		    let vv=(Math.abs(t*texture.height)|0)%texture.height;
-        
-	//rasterizer.GetActiveBuffer()[span]= RGB(w*255,w*255,w*255);
-	  
-	    	//	rasterizer.GetActiveBuffer()[span]= this.t.getPixel(uu|0,vv|0);
-	    		rasterizer.GetActiveBuffer()[span]=this.t.getPixelL(uu|0,vv|0,w*4);
-	  
-             //  	rasterizer.GetActiveBuffer()[span]= AddRGtoRGB(this.t.getPixelL(uu|0,vv|0,w),RGB(c.x*255,c.y*255,c.z*255));
-        //       	rasterizer.GetActiveBuffer()[span]= AddRGtoRGB(RGB(c.x*255,c.y*255,c.z*255),RGB(w*255,w*255,w*255));
-                              
-//rasterizer.GetActiveBuffer()[span]= RGB(c.x*255+w,c.y*255+w,c.z*255+w);
-
-
+                let back=rasterizer.GetActiveBuffer()[span];
+                //let front=this.t.getPixelL(uu|0,vv|0,w*40);
+                let front=this.t.getPixelL(uu|0,vv|0,w*30);
+//	    		rasterizer.GetActiveBuffer()[span]=RGBBlend(back,front,1);
+	    		rasterizer.GetActiveBuffer()[span]=front;
 			} 
 
                 span++;
@@ -220,68 +235,9 @@ let s1=span;
               	n = n.add(this.dn);
 
 		}
-	    		//rasterizer.GetActiveBuffer()[s1]= RGB(0,255,0)
-	    		//rasterizer.GetActiveBuffer()[span]= RGB(0,255,0)
 
     }
-    RenderZ(span_renderer) {
-
-      
-        let rasterizer=span_renderer.rasterizer;
-        let c=this.c;
-        let n=this.n;
-        let u=this.u;
-        let v=this.v;
-        let w=this.w;
-        let start = this.start;
-        let texture=this.t;
-        let span=this.y*rasterizer.width()+start;
-        
-        
-        
-        if (texture===null) {
-            let clear_color=RGB(0,0,0);
-            for (; start < this.end; start++) {
-             rasterizer.GetActiveZBuffer()[span]=w;
-             rasterizer.GetActiveBuffer()[span]=clear_color;
-             span++;
-          }
-          return;
-        }
-
-        for (; start < this.end; start++)
-		{
-        
-            
-            if (rasterizer.PutBuffer(span,w))  
-            {
-                rasterizer.GetActiveZBuffer()[span]=w;
-			    let	z = 1.0 / w;
-			    let	s = (u * z);
-			    let	t = (v * z);
-
-
-			    let uu=((s*texture.width)|0)%texture.width;
-    		    let vv=((t*texture.height)|0)%texture.height;
-        
-	
-	  
-	    //		rasterizer.GetActiveBuffer()[span]= RGB(w*255,w*255,w*255);//this.t.getPixel(uu|0,vv|0);
-//	    		rasterizer.GetActiveBuffer()[span]=this.t.getPixelL(uu|0,vv|0,w);
-	  
-        //       		rasterizer.GetActiveBuffer()[span]= AddRGtoRGB(this.t.getPixelL(uu|0,vv|0,w),RGB(c.x*255,c.y*255,c.z*255));
-	  
-			} 
-				span++;
-				u += this.du;
-				v += this.dv;
-   			    w += this.dw;
-              	c = c.add(this.dc);
-              	n = n.add(this.dn);
-
-		}
-
-    }
+   
 }
 
 
@@ -298,101 +254,10 @@ class SpanRenderer {
     constructor(rasterizer) {
         this._rasterizer=rasterizer;
         this._line = new Array();
+        this._transparent = new Array(height);
         this.SetSize(this._rasterizer.width,this._rasterizer.height);
          
     }
-
-
-isOccludedRectFast(minX, maxX, minY, maxY, nodeNearW) {
-    minX |= 0; maxX |= 0;
-    minY |= 0; maxY |= 0;
-
-    minY = Math.max(0, minY);
-    maxY = Math.min(this._line.length - 1, maxY);
-
-    const height = maxY - minY;
-    const STEP_Y = (height > 200) ? 8 : (height > 80 ? 4 : 2);
-
-    const testXs = [
-        minX,
-        (minX + maxX) >> 1,
-        maxX - 1
-    ];
-
-    for (let y = minY; y <= maxY; y += STEP_Y) {
-
-        const spans = this._line[y];
-        if (!spans || spans.length === 0) return false;
-
-        // schneller Reject: Coverage
-        if (spans[0].start > minX) return false;
-        if (spans[spans.length - 1].end < maxX) return false;
-
-        for (const x of testXs) {
-
-            let covered = false;
-
-            for (const s of spans) {
-
-                // 👇 Hintergrund ignorieren
-                if (s.a === 0) continue;
-
-                if (x < s.start || x >= s.end) continue;
-
-                if (s.wAt(x) <= nodeNearW) {
-                    covered = true;
-                    break;
-                }
-            }
-
-            if (!covered) return false;
-        }
-    }
-
-    return true;
-};
-
- isOccludedRect(minX, maxX, minY, maxY, nodeNearW) {
-
-    minX |= 0;
-    maxX |= 0;
-    minY |= 0;
-    maxY |= 0;
-    
-    
-    for (let y = minY; y <= maxY; y++) {
-        
-        const spans = this._line[y];
-        if (!spans || spans.length === 0) return false;
-
-        let coveredUntil = minX;
-
-        for (const s of spans) {
-            if (s.a==0) continue;  
-            if (s.end <= coveredUntil) continue;
-            if (s.start > coveredUntil) break; // Lücke!
-
-            const x0 = Math.max(s.start, coveredUntil);
-            const x1 = Math.min(s.end, maxX);
-
-            // Tiefentest an beiden Enden (linear -> reicht)
-            const w0 = s.wAt(x0);
-            const w1 = s.wAt(x1 - 1);
-
-            // Span ist hier vorne genug?
-            if (w0 <= nodeNearW && w1 <= nodeNearW) {
-                coveredUntil = x1;
-                if (coveredUntil >= maxX) break;
-            } else {
-                return false; // sichtbar
-            }
-        }
-
-        if (coveredUntil < maxX) return false;
-    }
-
-    return true; // vollständig verdeckt
-}
 
     subtractSpan(span, cut0, cut1) {
         const out = [];
@@ -442,6 +307,7 @@ isOccludedRectFast(minX, maxX, minY, maxY, nodeNearW) {
             };
         }
     }
+
     insertSpan(newSpan, visible) {
         let fragments = [ newSpan ];
 
@@ -471,7 +337,7 @@ isOccludedRectFast(minX, maxX, minY, maxY, nodeNearW) {
     }
 
     visible.push(...fragments);
-}
+    }
 
      resolveScanline(spans) {
         const visible = [];
@@ -502,8 +368,12 @@ isOccludedRectFast(minX, maxX, minY, maxY, nodeNearW) {
     }
 
     calcEdgeDeltas(edge,top,bot,shade=false)
-    {
-	    var	overHeight = 1.0 / (bot.y - top.y);
+    {   
+        var overHeight=0;
+	    var h=(bot.y - top.y);
+        if (h!=0) overHeight = 1.0 / h;
+	    
+        edge.dalpha = (bot.alpha - top.alpha) * overHeight;
 	    edge.du = (bot.u - top.u) * overHeight;
 	    edge.dv = (bot.v - top.v) * overHeight;
 	    edge.dw = (bot.w - top.w) * overHeight;
@@ -516,6 +386,7 @@ isOccludedRectFast(minX, maxX, minY, maxY, nodeNearW) {
 	// Screen pixel Adjustments (some call this "sub-pixel accuracy")
 
 	    var	subPix =  top.iy - top.y;
+	    edge.dalpha  = top.dalpha + edge.ddalpha * subPix;
 	    edge.u  = top.u + edge.du * subPix;
     	edge.v  = top.v + edge.dv * subPix;
 	    edge.w  = top.w + edge.dw * subPix;
@@ -526,167 +397,27 @@ isOccludedRectFast(minX, maxX, minY, maxY, nodeNearW) {
 	    edge.color  = top.color.add(edge.dcolor.mul(subPix));
     }
 
-    AddPrimitive(primitive,texture) {
-      if (this._rasterizer._use_spanbuffer===true) this.AddPrimitive_span(primitive,texture); 
-      else this.AddPrimitive_no_span(primitive,texture);
+    AddPrimitive(primitive) {
+      this.AddPrimitive_span(primitive); 
     }
 
-    AddPrimitive_no_span(primitive,texture) // fehlerhaft
-{
+
+   AddPrimitive_span(primitive) // fehlerhaft
+   {
 	// Find the top-most vertex
 	let verts=primitive.sverts;
 
     var lastVert=verts.length-1;
-  var lTop=0;
-  var rTop=0;
+    var lTop=0;
+    var rTop=0;
   
-
-
-  for (let i=0;i<verts.length;i++)
-  {
-	verts[i].iy =  Math.ceil(verts[i].y);
-	 if (verts[i].y < verts[lTop].y) lTop = i;
-
-  }
-
-	// Make sure we have the top-most vertex that is earliest in the winding order
-
-	if (verts[lastVert].y == verts[lTop].y && verts[0].y == verts[lTop].y) lTop = lastVert;
-
-	rTop = lTop;
-
-	// Top scanline of the polygon in the frame buffer
-
-	var	fb = verts[lTop].iy; //* this.pitch;
-	
-
-	// Left & Right edges (primed with 0 to force edge calcs first-time through)
-
-	var	le = new Edge();
-    var re = new Edge();
-	le.height = 0;
-	re.height = 0;
-
-	// Render the polygon
-
-	var	done = false;
-	while(done==false)
-	{
-
-
-		if (!le.height)
-		{
-			let lBot = lTop - 1; 
-			if (lBot < 0) lBot = verts.length-1;
-             le.height = verts[lBot].iy - verts[lTop].iy;
-			
-            if (le.height < 0) return;
-			this.calcEdgeDeltas(le, verts[lTop], verts[lBot]);
-			lTop = lBot;
-			if (lTop == rTop) done = true;
-			if (lTop != rTop && done==true) return;
-		}
-
-		if (!re.height)
-		{
-			var rBot = rTop + 1; 
-      
-      if (rBot > lastVert) rBot = 0;
-			re.height = verts[rBot].iy - verts[rTop].iy;
-			if (re.height < 0) return;
-			this.calcEdgeDeltas(re, verts[rTop], verts[rBot]);
-			rTop = rBot;
-			if (lTop == rTop) done = true;
-			if (lTop != rTop && done==true) return;
-		}
-
-		// Get the height
-
-		var	height = Math.min(le.height, re.height)|0;
-
-		// Subtract the height from each edge
-
-		le.height -= height;
-		re.height -= height;
-
-        height=height | 0;
-
-		// Render the current trapezoid defined by left & right edges
-  
-
-		
-    while(((height--)|0) )
-		{
-
-
-            var span = new Span();
-
-			var		overWidth = 1.0 / (re.x - le.x);
-			span.du  = (re.u - le.u) * overWidth;
-			span.dv  = (re.v - le.v) * overWidth;
-			span.dw  = (re.w - le.w) * overWidth;
-            span.dc  = re.color.sub(le.color).mul(overWidth);
-            span.dn  = re.normal.sub(le.normal).mul(overWidth);
-
-			// Find the end-points
-
-			span.start = Math.ceil(le.x)|0;
-			span.end   = Math.ceil(re.x)|0;
-
-			// Texture adjustment (some call this "sub-texel accuracy")
-
-			var		subTex =  span.start - le.x;
-
-			span.u = (le.u + span.du * subTex) ;
-			span.v = (le.v + span.dv * subTex) ;
-			span.w = (le.w + span.dw * subTex);
-            span.c  = le.color.add(span.dc.mul(subTex));
-            span.n  = le.normal.add(span.dn.mul(subTex));
-            span.y = fb;
-			span.t=texture;
-            
-            span.RenderZ(this);
-			// Step
-
-			le.u += le.du;
-			le.v += le.dv;
-			le.w += le.dw;
-			le.x += le.dx;
-            le.color = le.color.add(le.dcolor);
-            le.normal = le.normal.add(le.dnormal);
-
-			re.u += re.du;
-			re.v += re.dv;
-			re.w += re.dw;
-			re.x += re.dx;
-			re.normal = re.normal.add(re.dnormal);
-            fb++;
-			
-    		
-    }
     
-   // console.log("End Loope");
-	}
-    }
-
-
-   AddPrimitive_span(primitive,texture) // fehlerhaft
-{
-	// Find the top-most vertex
-	let verts=primitive.sverts;
-
-    var lastVert=verts.length-1;
-  var lTop=0;
-  var rTop=0;
-  
-
-
-  for (let i=0;i<verts.length;i++)
-  {
-	verts[i].iy =  Math.ceil(verts[i].y);
+    
+    for (let i=0;i<verts.length;i++)
+    {
+	 verts[i].iy =  Math.ceil(verts[i].y);
 	 if (verts[i].y < verts[lTop].y) lTop = i;
-
-  }
+   }
 
 	// Make sure we have the top-most vertex that is earliest in the winding order
 
@@ -759,8 +490,9 @@ isOccludedRectFast(minX, maxX, minY, maxY, nodeNearW) {
 
 
             var span = new Span();
-
+            span._index=primitive._id;
 			var		overWidth = 1.0 / (re.x - le.x);
+			span.dalpha  = (re.alpha - le.alpha) * overWidth;
 			span.du  = (re.u - le.u) * overWidth;
 			span.dv  = (re.v - le.v) * overWidth;
 			span.dw  = (re.w - le.w) * overWidth;
@@ -776,21 +508,23 @@ isOccludedRectFast(minX, maxX, minY, maxY, nodeNearW) {
 
 			var		subTex =  span.start - le.x;
 
+			span.alpha = (le.alpha + span.dalpha * subTex) ;
 			span.u = (le.u + span.du * subTex) ;
 			span.v = (le.v + span.dv * subTex) ;
 			span.w = (le.w + span.dw * subTex);
             span.c  = le.color.add(span.dc.mul(subTex));
             span.n  = le.normal.add(span.dn.mul(subTex));
             span.y = fb;
-			span.t=texture;
+			span.t=primitive._texture;
             
 			this.AddSpan(span);
 			// Step
-
+            
 			le.u += le.du;
 			le.v += le.dv;
 			le.w += le.dw;
 			le.x += le.dx;
+            le.alpha+=le.dalpha;
             le.color = le.color.add(le.dcolor);
             le.normal = le.normal.add(le.dnormal);
 
@@ -798,6 +532,7 @@ isOccludedRectFast(minX, maxX, minY, maxY, nodeNearW) {
 			re.v += re.dv;
 			re.w += re.dw;
 			re.x += re.dx;
+            re.alpha+=re.dalpha;
 			re.normal = re.normal.add(re.dnormal);
             fb++;
 			
@@ -808,25 +543,35 @@ isOccludedRectFast(minX, maxX, minY, maxY, nodeNearW) {
 	}
    }
 
-    AddSpan(span) {
-        this._line[span.y].push(span);
+    AddSpan(span)
+    {
+        if (span.alpha < 1.0) {
+            this._transparent[span.y].push(span); // 🔥 transparent
+        } else {
+            this._line[span.y].push(span);        // 🔥 opaque
+        }
+
         this._m_spans_in++;
+
     }
 
     Init() {
        this._m_spans_in=0;
        this._m_spans_out=0;
-      this._line = new Array(this._rasterizer.height());
-      for (let y=0;y<this._rasterizer.height();y++) {
-        let span= new Span();
-        span.y=y;
-        span.start=0;
-        span.end=this._rasterizer.width();
-        span.t=null;
-        span.w=-this.max_depth/2;
-        span.a=0;
-        this._line[y]=new Array();
-         this.AddSpan(span);
+       this._line = new Array(this._rasterizer.height());
+       this._transparent = new Array(this._rasterizer.height());
+
+       for (let y=0;y<this._rasterizer.height();y++) {
+          let span= new Span();
+          span.y=y;
+          span.start=0;
+          span.end=this._rasterizer.width();
+          span.t=null;
+          span.w=-this.max_depth/2;
+          span.a=0;
+          this._line[y]=new Array();
+          this._transparent[y] = [];
+          this.AddSpan(span);
       }
     }
 
@@ -834,26 +579,34 @@ isOccludedRectFast(minX, maxX, minY, maxY, nodeNearW) {
     get SpansOut() {return this._m_spans_out;}
 
     Render(sort=true) {
+
         this._spans_out=0;
         this._spans_in=0;
-        if(sort) {
-           
-           for (let y=0;y<this._line.length;y++) 
-           { 
-              this._spans_in+= this._line[y].length;
-              this._line[y]=this.resolveScanline(this._line[y]);
-              for (let x=0;x<this._line[y].length;x++) this._line[y][x] .Render(this);
-              this._spans_out+=this._line[y].length;
-           }
-           return;
-        } 
-        for (let y=0;y<this._line.length;y++) 
+
+        for (let y=0;y<this._line.length;y++)
         {
-            this._spans_in+= this._line[y].length;
-            for (let x=0;x<this._line[y].length;x++) this._line[y][x] .Render(this);
-            this._spans_out+=this._line[y].length;
+            // ===== OPAQUE =====
+            this._spans_in += this._line[y].length;
+
+            if (sort) {
+                this._line[y] = this.resolveScanline(this._line[y]);
+            }
+
+            for (let s of this._line[y]) {
+                s.Render(this);
+            }
+
+            this._spans_out += this._line[y].length;
+
+            // ===== TRANSPARENT =====
+            let transp = this._transparent[y];
+
+            // Back-to-front sortieren
+            transp.sort((a,b) => b.w - a.w);
+
+            for (let s of transp) {
+                s.RenderTransparent(this);
+            }
         }
-
-
     }
 }

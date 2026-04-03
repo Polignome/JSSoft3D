@@ -6,8 +6,11 @@ class BrusFace {
        this.v0=v0;
        this.v1=v1;
        this.v2=v2;
+       this.t0=t0;
+       this.t1=t1;
+       this.t2=t2;
        this.verts=new Array();         
-       
+       this.texture_name=texture_name;
        
                     
       if (swap_axis!="") {
@@ -23,7 +26,64 @@ class BrusFace {
 
     }
 
-      CreateByPlane(size=10000) {
+
+    SplitByPlane(plane) 
+     {
+       var fpoly=[];
+       var bpoly=[];
+
+
+       for (let i=0;i<this.verts.length;i++)
+       {
+         var j=(i+1) % this.verts.length;
+         var v0=this.verts[i];
+         var v1=this.verts[j];
+         var res0=plane.Classify(v0);
+         var res1=plane.Classify(v1);
+    
+         
+         if (res0==COPLANAR ) {
+           fpoly.push(new Vector3(v0)); 
+           bpoly.push(new Vector3(v0)); 
+         }
+    
+         if (res0==FRONT) 
+         { 
+           fpoly.push(new Vector3(v0));
+         }
+
+         if (res0==BACK) 
+         { 
+          bpoly.push(new Vector3(v0));
+         }
+         
+         if ((res0==FRONT && res1==BACK) || (res1==FRONT && res0==BACK))
+         {
+           var aDot=v0.dot(plane.normal);
+           var bDot=v1.dot(plane.normal);
+           var scaled = ((-plane.D) - aDot) / ((bDot - aDot));
+           var  v = new Vector3(v0.x + (scaled * (v1.x - v0.x)),
+                                v0.y + (scaled * (v1.y - v0.y)),
+                                v0.z + (scaled * (v1.z - v0.z)));
+           fpoly.push(new Vector3(v));
+           bpoly.push(new Vector3(v));
+         }
+       }  
+       
+       if (fpoly.length < 3) fpoly=null;
+       if (bpoly.length < 3) bpoly=null;
+        
+
+        return [fpoly,bpoly];
+     }
+
+
+
+
+
+
+
+    CreateByPlane(size=1000000) {
         this.verts=new Array();
   
         var absnormal=new Vector3(this.plane.normal);        
@@ -95,9 +155,28 @@ class Brush {
       this.face_list.push(face);        
     }
 
+
     
-    BuildFaces(keep=1) {
-      this.face_list=ConvexBuilder.buildFromBrushfaces(this.face_list);
+
+BuildFaces(keep=1) {
+      
+      for (let f of this.face_list) 
+      {
+          f.CreateByPlane();
+          
+          for (let f2 of this.face_list) {
+             if (f2==f) continue;
+             if (f2.plane.Classify(f.verts) === SPANNING)   {
+                let help=f.SplitByPlane(f2.plane);
+                if (help[0]) f.verts=help[0];
+                
+             }
+          }   
+      }
+
+
+
+
       this._aabb= new AABB();
       let planes= new Array();
       this.primitives= new  Array();
@@ -108,9 +187,10 @@ class Brush {
         
         this._aabb.Add(verts)
         let p=new Polygon(verts,true,0.1);
+        p._texture=global_texture_manager.GetTextureByName(f.texture_name);
         p.render_type=POLY_PERSPECTIVE_TEXTURED;
         p.calcPlane();
-        p.setWorldTexture(0.1,0.1);
+        p.setWorldTexture(0.01,0.01);
         this.primitives.push(p);
         
         planes.push(p.plane);
@@ -118,7 +198,6 @@ class Brush {
       
       this.cgs_tree=new CSGTree(planes);
     }
-
 
     GetNumFaces() {
         return this.face_list.length;

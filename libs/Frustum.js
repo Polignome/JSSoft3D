@@ -10,10 +10,74 @@ const FRONT_PLANE   =1<<5;
 const BACK_PLANE    =1<<6;
 const ALL_PLANES    =TOP_PLANE | BOTTOM_PLANE | LEFT_PLANE | RIGHT_PLANE | FRONT_PLANE | BACK_PLANE
 
-class Frustum {
-    constructor(cam=undefined) {
-        this._frustum =new Array();
 
+
+class BaseFrustum {
+   constructor() {
+       this._frustum =new Array();
+   }
+
+   intersectsAABB(aabb) 
+   {
+      // Für jede Ebene des Frustums
+    
+      for (let plane of this._frustum) 
+      {
+    
+        // pVertex = „am weitesten in Richtung der Normal“
+        let px = (plane.normal.x >= 0) ? aabb.max.x : aabb.min.x;
+        let py = (plane.normal.y >= 0) ? aabb.max.y : aabb.min.y;
+        let pz = (plane.normal.z >= 0) ? aabb.max.z : aabb.min.z;
+
+        let distance = plane.normal.x * px +
+                       plane.normal.y * py +
+                       plane.normal.z * pz + plane.D;
+            
+
+        if (distance < 0) {
+            // AABB liegt komplett außerhalb dieser Ebene
+            return false;
+        }
+      }
+
+      // AABB liegt teilweise oder vollständig innerhalb des Frustums
+      return true;
+   };
+
+
+    get NumPlanes() {return this._frustum.length;}
+    get planes() {return this._frustum;}
+
+
+    ClassifyPolygonByFrustum(polygon) {
+        for (let f of this._frustum)
+        {
+           let res=this.Classify(polygon);  
+           if (res==BACK || res==SPANNING)  return res;
+        }
+        return FRONT;
+     }
+
+     ClassifyPortalByFrustum(portal) {
+        for (let f of this._frustum)
+        {
+           let res=this.Classify(portal);  
+           if (res==BACK || res==SPANNING)  return res;
+        }
+        return FRONT;
+     }
+
+}
+
+
+
+
+
+
+
+class Frustum extends BaseFrustum{
+    constructor(cam=undefined) {
+        super();
         this._Cnear = new Vector3();
         this._Cfar =  new Vector3();
         this._Near_Top_Left     = new Vector3();
@@ -34,43 +98,12 @@ class Frustum {
 
 
 
-intersectsAABB(aabb) {
-    // Für jede Ebene des Frustums
-    
-    for (let plane of this._frustum) {
-    
-        // pVertex = „am weitesten in Richtung der Normal“
-        let px = (plane.normal.x >= 0) ? aabb.max.x : aabb.min.x;
-        let py = (plane.normal.y >= 0) ? aabb.max.y : aabb.min.y;
-        let pz = (plane.normal.z >= 0) ? aabb.max.z : aabb.min.z;
-
-        let distance = plane.normal.x * px +
-                       plane.normal.y * py +
-                       plane.normal.z * pz + plane.D;
-            
-
-        if (distance < 0) {
-            // AABB liegt komplett außerhalb dieser Ebene
-            return false;
-        }
-    }
-
-    // AABB liegt teilweise oder vollständig innerhalb des Frustums
-    return true;
-};
-
-
-    get NumPlanes() {return this._frustum.length;}
 
    
 
       
 
    createByCam(cam,test=false) {
-
-   
-
-
 
     var P=cam.position;
     var v=cam.forward();
@@ -126,25 +159,40 @@ intersectsAABB(aabb) {
 }
 
 ClipLine(vv0,vv1) {
-   let v0=new Vert(vv0);
-   let v1=new Vert(vv1);
+   
+  
+   var v0=new Vert(vv0);
+   var v1=new Vert(vv1);
      
   for (let p of this._frustum) {
-    let r0=p.Classify(v0);
-    let r1=p.Classify(v1);
-    if (r0==FRONT && r1==FRONT || r0==PLANAR && r1==PLANAR) continue;
-    if (r0==FRONT && r1==PLANAR || r0==PLANAR && r1==FRONT) continue;
+    let r0=p.Classify(v0.world);
+    let r1=p.Classify(v1.world);
+
+    if (r0===BACK && r1===BACK) return null;  
     
-    if (r0==BACK && r1==BACK) return null;
-    let v=p.Split(v0,v1)     
-    if (r0==BACK) v0=v;
-    else v1=v;
+    if (r0===FRONT && r1===BACK)
+    {
+       v1=p.Split(v1,v0);
+       v1.color.x=1;
+       v1.color.y=0;
+       v1.color.z=0;
+       continue;     
+       
+    }
+    if (r0===BACK && r1===FRONT)
+    {
+       v0=p.Split(v0,v1);
+       v0.color.x=1;
+       v1.color.y=0;
+       v0.color.z=1;
+       continue;     
+    }
+    
   }
 
     return [v0,v1];
 }
 
-get planes() {return this._frustum;}
 
    convertToPrim() {
 

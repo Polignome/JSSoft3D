@@ -39,8 +39,16 @@ function DebugOut(s)
 {
   document.getElementById("debugout").value+=s;
 }
+function ClearDebugOut()
+{
+  document.getElementById("debugout").value="";
+}
 
 
   function assert(a,b=undefined) {
 
   }
+
+  function wait(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}

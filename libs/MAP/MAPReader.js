@@ -198,7 +198,7 @@ class Map {
 
    }
 
-    ConvertToPolygonlist(scale =0.05) {
+    ConvertToPolygonlist(scale =1) {
 
  let help =0;
         const polys=[];
@@ -228,7 +228,7 @@ class Map {
            p.calcPlane();
            p.calcCenterOfMass();
            //p.setPlanarTexture();
-           p.setWorldTexture(0.25,0.25);
+           p.setWorldTexture(0.025,0.025);
            
            p.SetNormalColor();
            p.render_type=POLY_PERSPECTIVE_TEXTURED;

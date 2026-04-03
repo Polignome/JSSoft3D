@@ -9,9 +9,28 @@ const POLY_LINED = 1<<6;
 
 const FIXED_POINT = 16;
 
+// 
+//    0..255   16       1.048.576
+// |---------|----|------------------------|  
+// |0000 0000|0000|0000 0000 0000 0000 0000|
+//             24    20   16   12   8    4
 
 
 
+
+function CalcIndex(obj_type,obj_attrib,obj_index) {
+    return (obj_type)<<24 | (obj_attrib)<<20 | obj_index;
+}
+                                                                    
+function GetIndexObjType(objid) {
+    return (objid&0xff000000)>>24 ;
+}
+function GetIndexObjAttrib(objid) {
+    return (objid&0x00f00000)>>20 ;
+}
+function GetIndexObjIndex(objid) {
+    return (objid&0x000fffff) ;
+}
 
 
 
@@ -49,6 +68,8 @@ class Rasterizer {
         
     //    this._bhv=null;
 
+        this._ibuffer= new Int32Array();
+ 
         this._zbuffer= null;//new Float64Array();
         this._hzbuffer= new HierarchicalZBuffer();
         this._spanrenderer= new SpanRenderer(this);
@@ -59,10 +80,10 @@ class Rasterizer {
         this._z_test_buffer= null;//new Float64Array();
 
 
-        this._dummy_texture = new Texture() ;
+       this._dummy_texture = new Texture() ;
      
        this.xform = new Matrix4x4();
-      this.frustum = new Frustum();
+       this.frustum = new Frustum();
 
 
        this._primitives_in =0;
@@ -78,8 +99,9 @@ class Rasterizer {
        this._use_node_frustum_culling=true;
        this._use_node_hzbuffer_culling=true;
 
-        this._clear_spanbuffer=true;
-        this._use_spanbuffer=true;
+       this._clear_spanbuffer=true;
+       this._use_spanbuffer=true;
+       
         
         this._canvas.Canvas.addEventListener("resize", (ev) => {
             let {width, height } = ev;
@@ -128,8 +150,11 @@ class Rasterizer {
            this._zbuffer= new Float64Array(this.width()*this.height());
            this._zbuffer.fill(this._max_depth);
            this._hzbuffer= new HierarchicalZBuffer(this.width(),this.height());
+           this._ibuffer= new Int32Array(this.width()*this.height());
+           this._ibuffer.fill(-1);
         }
         
+
         this._hzbuffer.setBaseLevel(this._zbuffer);
         this._hzbuffer.build();
 
@@ -184,7 +209,12 @@ class Rasterizer {
       return this._zbuffer;
    }
 
-   ZBufferToScreen() {
+   GetIBuffer() {
+      return this._ibuffer;
+   }
+
+
+    ZBufferToScreen() {
         for (let y=0;y<this._height;y++) {
           for (let x=0;x<this._width;x++) 
           {  
@@ -195,7 +225,21 @@ class Rasterizer {
           }
        }
     }
+
     
+    IBufferToScreen() {
+        for (let y=0;y<this._height;y++) {
+          for (let x=0;x<this._width;x++) 
+          {  
+            var c=GetIndexObjIndex(this._ibuffer[x+y*this._width]);
+            
+            
+            this._canvas.PutPixel(x,y,RGB(RGBToRed(c),RGBToGreen(c),RGBToBlue(c)));
+        
+          }
+       }
+    }
+
    ZTestBufferToScreen() {
         for (let y=0;y<this._height;y++) {
           for (let x=0;x<this._width;x++) 
@@ -227,6 +271,7 @@ DrawLine(a,b) {
                 var sx = (x1 < x2) ? 1 : -1;
                 var sy = (y1 < y2) ? 1 : -1;
                 var err = dx - dy;
+
                 var l=Math.sqrt(dx*dx+dy*dy);
                 var sz= dz/l;
                 
@@ -243,7 +288,7 @@ DrawLine(a,b) {
                 var db= (cb2-cb1)/l;
                 
                 
-                if (this.SetBuffer(x1,y1,z1)) canvas.PutPixel(x1,y1,RGBA(cr1|0,cg1|0,cb1|0,0xff));
+                if (this.SetBuffer(x1,y1,1/z1)) canvas.PutPixel(x1,y1,RGBA(cr1|0,cg1|0,cb1|0,0xff));
               //  return;
                 while (!((x1 == x2) && (y1 == y2))) {
                     var e2 = err << 1;
@@ -264,13 +309,13 @@ DrawLine(a,b) {
                     z1+=sz;
                     
 
-                    if (this.SetBuffer(x1,y1,z1)) canvas.PutPixel(x1,y1,RGBA(cr1|0,cg1|0,cb1|0,0xff));
+                    if (this.SetBuffer(x1,y1,1/z1)) canvas.PutPixel(x1,y1,RGBA(cr1|0,cg1|0,cb1|0,0xff));
                     
                   }
             }
 
 
-  Project(verts) {
+Project(verts) {
             
             let sverts= new Array(verts.length);
             
@@ -290,8 +335,8 @@ DrawLine(a,b) {
                 if (sverts[j].y < -0.5)                        sverts[j].y = -0.5;
                 if (sverts[j].y > (this.height() - 0.5)) sverts[j].y = this.height() - 0.5;
     
-//        		if (rasterizer.PerspectiveCorrect() == 0) ow = 1.0;
-//      		if (this.render_type != POLY_PERSPECTIVE_TEXTURED) ow = 1.0;
+     //z   		if (rasterizer.PerspectiveCorrect() == 0) ow = 1.0;
+     // 		if (this.render_type != POLY_PERSPECTIVE_TEXTURED) ow = 1.0;
         
                 sverts[j].u = verts[j].texture.x * ow;
                 sverts[j].v = verts[j].texture.y * ow;
@@ -300,9 +345,9 @@ DrawLine(a,b) {
             }
             //_sverts[verts.length-1].next = undefined;
            return sverts;       
-    }
+}
 
-  TransformToScreen(verts) {
+TransformToScreen(verts) {
             var	codeOff = -1;
             var	codeOn = 0;
             var code=0;
@@ -327,11 +372,81 @@ DrawLine(a,b) {
             
             
             return new Array(codeOff,codeOn);
+}
+
+DrawPolyLined(p,c1=new Vector3(0,1,0)) {
+  let result = p.ClipByFrustum(this.frustum);
+  if (result[1] < 0 || result[0] === undefined || result[0].verts.length < 3) return;
+  let clipped = result[0];
+  let o = clipped.TransformToScreen(this.xform);
+  if (o[0]) return;
+  if (!clipped.Project(this)) return;
+  
+  for (let i=0;i<clipped._sverts.length;i++)
+  {
+    let v0=clipped._sverts[i];
+    let v1=clipped._sverts[(i+1)%clipped._sverts.length];
+    this.DrawLine(v0,v1,c1);
+  }
+
+}
+
+DrawPolyLined2(p,c1=new Vector3(0,1,0)) {
+  let result = p.ClipByFrustum(this.frustum);
+  if (result[1] < 0 || result[0] === undefined || result[0].verts.length < 3) return;
+  let clipped = result[0];
+  let o = clipped.TransformToScreen(this.xform);
+  if (o[0]) return;
+  if (!clipped.Project(this)) return;
+  
+  for (let i=0;i<clipped._sverts.length;i++)
+  {
+    let v0=clipped._sverts[i];
+    let v1=clipped._sverts[(i+1)%clipped._sverts.length];
+    let v2=clipped._sverts[(i+2)%clipped._sverts.length];
+    v0.color=c1;
+    this.DrawLine(v0,v1);
+    this.DrawLine(v0,v2);
+  }
+
+}
+
+DrawPolyLined3(pp,c1=new Vector3(0,1,0),scale=25) {
+  
+
+  let p= new Polygon(pp);
+  p.calcPlane();
+  let n=p.plane.normal.mul(scale);
+
+  for (let v of p.verts)   {
+     v.world=v.world.add(n);
+  }
+  
+
+  
+    let result = p.ClipByFrustum(this.frustum);
+    if (result[1] < 0 || result[0] === undefined || result[0].verts.length < 3) return;
+    let clipped = result[0];
+    let o = clipped.TransformToScreen(this.xform);
+    if (o[0]) return;
+    if  (!clipped.Project(this)) return;
+  
+    for (let i=0;i<clipped._sverts.length;i++)
+    {
+      let v0=clipped._sverts[i];
+      v0.color=c1;
+      let v1=clipped._sverts[(i+1)%clipped._sverts.length];
+      let v2=clipped._sverts[(i+2)%clipped._sverts.length];
+      
+      this.DrawLine(v0,v1);
+      this.DrawLine(v0,v2);
     }
+  
+}
 
 DrawLine3D(a,b,c1=new Vector3(1,0,0),c2=undefined) {
-  let v0=new Vert(a);
-  let v1=new Vert(b);
+  let v0=new Vert(a,1);
+  let v1=new Vert(b,1);
   v0._color.x=v1._color.x=c1.x;
   v0._color.y=v1._color.y=c1.y;
   v0._color.z=v1._color.z=c1.z;
@@ -340,30 +455,41 @@ DrawLine3D(a,b,c1=new Vector3(1,0,0),c2=undefined) {
     v1._color.y=c2.y;
     v1._color.z=c2.z;
   }
+  let v2=new Vert(v1);
+  let v3=new Vert(v0);
+  
+  let p= new Polygon();
+  p.AddVert(v0);
+  p.AddVert(v1);
+  p.AddVert(v2);
+  p.AddVert(v3);
 
-  let aa=[v0,v1];
- // let aa=this.frustum.ClipLine(v0,v1);
-  if (!aa ||!aa[0]||!aa[1]) return;
-  let o=this.TransformToScreen(aa);
+  
+
+  //if (p.plane.Classify(camera.position) == BACK) return;
+  let result = p.ClipByFrustum(this.frustum);
+  if (result[1] < 0 || result[0] === undefined || result[0].verts.length < 3) return;
+  let clipped = result[0];
+  let o = clipped.TransformToScreen(this.xform);
   if (o[0]) return;
-  let s=this.Project(aa);
-  this.DrawLine(s[0],s[1]);
+  if (!clipped.Project(this)) return;
+
+
+
+  for (let i=0;i<clipped._sverts.length;i++)
+  {
+    let v0=clipped._sverts[i];
+    let v1=clipped._sverts[(i+1)%clipped._sverts.length];
+    this.DrawLine(v0,v1);
+  }
+  
+  
 
 }
     
-    ZBufferToScreenOLD(posx=0,posy=0,scale=1) {
+ZBufferToScreenOLD(posx=0,posy=0,scale=1) {
 
-        for (let y=0;y<this._height;y++) {
-          for (let x=0;x<this._width;x++) 
-          {  
-            var c= this._hzbuffer.help[x+y*this._width];
-            
-            this._canvas.PutPixel(x,y,c);
-        
-          }
-       }
-       return;
-
+      
 
         let pp=0;   
         for (let l=0;l<this._hzbuffer.levels.length;l++)  
@@ -384,7 +510,7 @@ DrawLine3D(a,b,c1=new Vector3(1,0,0),c2=undefined) {
     }
 
    
-    BuildBVH() {
+BuildBVH() {
        
        // this._bhv=buildBVH(this._primitives);
        this._bhv= new BVH(this); 
@@ -400,8 +526,16 @@ DrawLine3D(a,b,c1=new Vector3(1,0,0),c2=undefined) {
    ClearZBuffer() {
     this._zbuffer.fill(-(this._max_depth/2));
     this._z_test_buffer.fill(-(this._max_depth/2));
+   }
 
-}
+   ClearIBuffer() {
+    this._ibuffer.fill(-1);
+   }
+
+   GetObjectId() {
+    let offset=(this._canvas._mouse_x+this._canvas._mouse_y*this._canvas.width);
+    return this._ibuffer[offset];
+   }
    
    SetBuffer(x,y,z) {
     if (z<0|| z>=this._height*this._width) return false;
@@ -428,6 +562,9 @@ DrawLine3D(a,b,c1=new Vector3(1,0,0),c2=undefined) {
     GetActiveZBuffer() {
        return this._zbuffer ;
     }
+    GetActiveIBuffer() {
+       return this._ibuffer ;
+    }
 
 
 
@@ -438,6 +575,7 @@ DrawLine3D(a,b,c1=new Vector3(1,0,0),c2=undefined) {
     get maxscreenscaleinv() {return this._maxscreenscaleinv;}
 
     RenderPrimitives() {
+      if (!this._bhv) return;
       this._clear_spanbuffer= this._bhv.render(this.camera,this);
     } 
 
@@ -470,6 +608,8 @@ DrawLine3D(a,b,c1=new Vector3(1,0,0),c2=undefined) {
         this._zbuffer.fill(this._max_depth);
         
         this._hzbuffer= new HierarchicalZBuffer(this.width(),this.height());
+        this._ibuffer= new Int32Array(this.width()*this.height());
+        this._ibuffer.fill(-1);
 
         console.log("RESize :"+this._zbuffer.length);
         

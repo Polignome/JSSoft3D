@@ -56,7 +56,7 @@ class ConvexBuilder {
                     if (!P) continue;
 
                        
-                 //   if (this.pointInsidePlanes(P, planes)) 
+                   // if (this.pointInsidePlanes(P, planes)) 
                         {
                        
                        

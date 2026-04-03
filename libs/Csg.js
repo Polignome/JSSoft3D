@@ -66,7 +66,7 @@ class CSGNode
           }
           if (result === COPLANAR)
           {
-            if (this._plane.normal.dot(p.plane.normal)>=-Math.E ) 
+            if (this._plane.normal.dot(p.plane.normal)>=0) 
             {
               if (strong) {fl.push(new Polygon(p)); fl[fl.length-1].SetColor(0,0,1);} else {
                 bl.push(new Polygon(p));

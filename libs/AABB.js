@@ -104,6 +104,11 @@ class AABB {
         return out;
     }
 
+    len() {
+        return  this.max.sub(this.min).length();
+        
+    }
+
     get min() { return new Vector3(this._min); }
     get max() { return new Vector3(this._max); }
 
@@ -296,6 +301,54 @@ ClipPortal(portal) {
 
   }
   port.calcPlane();
+  
+   return port;
+   
+
+
+}
+
+ClipPolygon(polygon) {
+  let a = new Vector3(this._min.x, this._min.y, this._min.z);
+  let b = new Vector3(this._max.x, this._min.y, this._min.z);
+  let c = new Vector3(this._max.x, this._max.y, this._min.z);
+  let d = new Vector3(this._min.x, this._max.y, this._min.z);
+
+  let e = new Vector3(this._min.x, this._min.y, this._max.z);
+  let f = new Vector3(this._max.x, this._min.y, this._max.z);
+  let g = new Vector3(this._max.x, this._max.y, this._max.z);
+  let h = new Vector3(this._min.x, this._max.y, this._max.z);
+
+
+  let p0=Ray.CalcPlaneBy3Vectors(a,b,c);
+  let p1=Ray.CalcPlaneBy3Vectors(h,g,f);
+  let p2=Ray.CalcPlaneBy3Vectors(h,e,a);
+  let p3=Ray.CalcPlaneBy3Vectors(g,c,b);
+  let p4=Ray.CalcPlaneBy3Vectors(h,d,c);
+  let p5=Ray.CalcPlaneBy3Vectors(f,b,a);
+  let cl=new Array(p0,p1,p2,p3,p4,p5);
+  
+
+  let port=new Polygon(polygon)
+  
+
+
+
+//0,1 nichts
+//2 ja
+
+
+  for (let plane of cl) 
+{
+  
+     let result=plane.Classify(port);
+     
+     if (result===SPANNING) {
+        let s=port.SplitPolyByPlane(plane)
+        if (s[0]!=null) port=s[0];
+     }
+
+  }
   
    return port;
    

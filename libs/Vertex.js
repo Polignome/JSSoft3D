@@ -1,5 +1,4 @@
 class Vert {
-
     set texture(a) {this._texture=new Vector2(a);}     
     set world(a)   {this._world=new Vector3(a);}     
     set screen(a)  {this._screen=new Vector4(a);}     
@@ -7,13 +6,15 @@ class Vert {
     set normal(a)   {this._normal=new Vector3(a);}
     set light(a)   {this._light=new Vector3(a);}
    
+	set alpha(a)   {this._aplha=a;}
+	get alpha()   {return this._aplha;}
 
     get color()   {return this._color;}
     get texture() {return this._texture;}     
     get world()   {return this._world;}     
     get screen()  {return this._screen;}     
     get normal()  {return this._normal;}     
-    get light()  {return this._light;}     
+    get light()   {return this._light;}     
 
     scale(v) {
         let out=new Vert(this);
@@ -23,27 +24,28 @@ class Vert {
         return out;
     }
 
-    constructor(v,scale=1) {
+    constructor(v) {
         if (v instanceof Vert)
         {
             this._texture = new Vector2(v.texture);
-            this._world   = v._world.mul(scale);//new Vector3(v.world);
+            this._world   = new Vector3(v.world);
             this._screen  = new Vector4(v.screen);
             this._color   = new Vector3(v.color);
             this._normal  = new Vector3(v.normal);
             this._light   = new Vector3(v.light);
+            this._aplha   = v.alpha;
            return;
        }
       
         if (v instanceof Vector3)
         {
            this._texture = new Vector2();
-           this._world   = v.mul(scale);//new Vector3(v);
+           this._world   = new Vector3(v);
            this._screen  = new Vector4();
            this._color   = new Vector3(1,1,1);
            this._normal  = new Vector3();
            this._light   = new Vector3(1,1,1);
-
+           this._aplha   = 1.0; 
            return;
       }
 
@@ -53,7 +55,7 @@ class Vert {
       this._color   = new Vector3(1,1,1);
       this._light   = new Vector3(0,0,0);
       this._normal  = new Vector3();
-
+      this._aplha   = 1.0;
     }
 
     WorldToColor() {
@@ -75,8 +77,6 @@ class SVec {
          
     constructor(x=0,y=0,z=0,w=0,u=0,v=0,iy=0) {
         if (x instanceof SVec) 
-            
-            
             {
             this._x=x.x;
             this._y=x.y;
@@ -101,7 +101,7 @@ class SVec {
         this._u=u;
         this._v=v;
         this._iy=iy;
-        this._next=undefined;
+        this._aplha=1.0;
     }
     set color(a) {this._color=new Vector3(a);}
     set normal(a) {this._normal=new Vector3(a);}
@@ -118,6 +118,10 @@ class SVec {
     get color() {return new Vector3(this._color);}
     get normal() {return new Vector3(this._normal);}
     get light() {return new Vector3(this._light);}
+
+	set alpha(a)  {this._aplha=a;}
+	get alpha()   {return this._aplha;}
+
     get x() {return this._x;}
     get y() {return this._y;}
     get z() {return this._z;}
@@ -126,11 +130,6 @@ class SVec {
     get u() {return this._u;}
     get v() {return this._v;}
     get iy() {return this._iy;}
-
-    set next(a) {this._next=a;}
-    get next() {return this._next;}
-
-
 }
 
 

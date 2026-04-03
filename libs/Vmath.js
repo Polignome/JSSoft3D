@@ -98,6 +98,11 @@ class Matrix {
       return outp; 
     }
 
+
+    trim(num=6) {
+      for (let i = 0; i < this._N; i++) this._data[i]=this._data[i].toFixed(num);
+    
+    }
     dot(m) 
 		{
 					let	result = 0;
@@ -130,10 +135,10 @@ class Matrix {
       var outp = this.newNxM();//new Matrix(this._N,this._M);
       if (typeof v === "number") {
         if (!Number.isFinite(v)) return outp;
-        for (let i=0;i<this._size;i++) outp.Data[i]=this._data[i]-v;
+        for (let i=0;i<this._size;i++) outp._data[i]=this._data[i]-v;
         return outp;
       }
-      for (let i=0;i<this._size;i++) outp.Data[i]=this._data[i]-v.Data[i];
+      for (let i=0;i<this._size;i++) outp.Data[i]=this._data[i]-v._data[i];
       return outp;
     }
 

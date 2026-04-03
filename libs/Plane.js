@@ -15,6 +15,7 @@ const XAXIS =0;
 const YAXIS =1;
 const ZAXIS =2;
 
+const TRIM=10
 
 
 
@@ -271,6 +272,8 @@ class Ray {
 		this._dCalculated = false;
 	}
 
+
+
     Classify(v)  {
         
         if (v instanceof Polygon)
@@ -279,7 +282,6 @@ class Ray {
             return this.Classify(v.verts);  
              
         }
-
         if (v instanceof Portal)
          {
             return this.Classify(v.verts);  
@@ -290,7 +292,7 @@ class Ray {
         if (v instanceof  Vector3) {
   //          console.log("------------- vector");
             var dir = this.origin.sub(v);
-            var e=dir.dot(this.normal);
+            var e=dir.dot(this.normal)
             if (e<0) return FRONT;
             if (e>0) return BACK;
             return COPLANAR;
@@ -298,7 +300,7 @@ class Ray {
         if (v instanceof Vert) {
     //        console.log("------------- vert");    
             var dir = this.origin.sub(v.world);
-            var e=dir.dot(this.normal);
+            var e=dir.dot(this.normal)
             if (e<0) return FRONT;
             if (e>0) return BACK;
             return COPLANAR;
@@ -309,18 +311,21 @@ class Ray {
             
       //      console.log("------------- Arry");
             var front=0;               
-            var back=0;               
-                           
+            var back=0;                
+            var planar=0;               
             for (let i=0;i<v.length;i++) {
               var res=this.Classify(v[i]);
-              if (res==FRONT) front++; else
-              if (res==BACK) back++; 
+              
+              if (res===FRONT ) front++; else
+              if (res===BACK) back++; 
+              if (front>0 && back>0) return SPANNING
               
             }
             if (back==0 && front > 0) return FRONT;
             if (back >0 && front == 0) return BACK;
-            if (back > 0 && front > 0) return SPANNING;
-            return COPLANAR;
+             return COPLANAR;
+            
+            
               
         }
 
@@ -340,33 +345,19 @@ class Ray {
             var a = this.Classify(v[i]);
             var b = this.Classify(v[i2]);
             
+            if(a === FRONT) front.push(GetACopy(v[i]));
+            if (a === BACK) back.push(GetACopy(v[i]));            
             
-            if ( a == COPLANAR) 
+            if ( a === COPLANAR) 
             {
-                
-
                 front.push(GetACopy(v[i]));
                 back.push(GetACopy(v[i]));
                 continue;
             }
-            if(a == FRONT)
+            
+            if ((a === FRONT && b===BACK) || (a === BACK && b=== FRONT)) 
             {
-                
-                front.push(GetACopy(v[i]));
-                
-            }
-            if (a == BACK) {
-                
-                back.push(GetACopy(v[i]));
-                
-            }
-        
-
-            if ((a == FRONT && b==BACK) || (a == BACK && b== FRONT)) 
-            {
-                   
                 var h=this.Split(v[i],v[i2]);
-                
                 back.push(h);
                 front.push(GetACopy(h));
             }
@@ -386,79 +377,66 @@ class Ray {
         return ZAXIS;
     }
 
+SplitLineVec2(a,b) {
+  let aDot=a.dot(this.normal);
+  let bDot=b.dot(this.normal);
+  let scaled = (((-this._D) - aDot)) / ((bDot - aDot))
+  let rr= new Vector3(a.x + (scaled * (b.x - a.x)),a.y + (scaled * (b.y - a.y)),a.z + (scaled * (b.z - a.z)));
 
-    Split(a, b) {
+   return rr;
+}
+
+SplitLineVert(a,b) {
+    let aDot=a.world.dot(this.normal);
+    let bDot=b.world.dot(this.normal);
+    let scaled = ((-this._D) - aDot) / ((bDot - aDot));
+    var v=new Vert();
+
+    v._world  = new Vector3(a.world.x + (scaled * (b.world.x - a.world.x)),a.world.y + (scaled * (b.world.y - a.world.y)),a.world.z + (scaled * (b.world.z - a.world.z)));
+    v._color  = new Vector3(a.color.x + (scaled * (b.color.x - a.color.x)),a.color.y + (scaled * (b.color.y - a.color.y)),a.color.z + (scaled * (b.color.z - a.color.z)));
+    v._texture= new Vector2(a.texture.x + (scaled * (b.texture.x - a.texture.x)),v.texture.y = a.texture.y + (scaled * (b.texture.y - a.texture.y)));      
+   
+    return v;            
+}
+
+
+SplitPolygon(a) {
+    var v=this.Split(a.verts);
+
+
+    var front= null;
+    var back= null;
+
+   
+    if (v[0]) {
+        front=new Polygon();
+        front.CoppyAttribs(a,false);
+        front.AddVerts(v[0]);
+    } 
+    if (v[1]) {
+        back=new Polygon();
+        back.CoppyAttribs(a,false);
+        back.AddVerts(v[1]);
+    } 
+     return [front,back]; 
+          
+     
+    
+
+}
+
+Split(a, b) {
         var aDot   =0.0;
         var bDot   =0.0;
         var scaled =0.0;
         
-        if (a instanceof Array)
-        { 
-            return this.SplitList(a);
-        }
+        if (a instanceof Array) return this.SplitList(a);
 
+        if (a instanceof Polygon) return this.SplitPolygon(a);
 
+        if (a instanceof Vert) return this.SplitLineVert(a,b);
 
-
-
-        if (a instanceof Polygon)
-        {
-            
-            var v=this.Split(a.verts);
-            
-            if (b==FRONT && v[0].length) 
-            {
-              
-                var p= new Primitive();
-                p.AddVerts(v[0]);
-                return p;
-            }
-            if (b==BACK && v[0].length)  {
-            
-                var p= new Primitive();
-                p.AddVerts(v[1]);
-                return p;
-            }
-            if (v[0].length && v[1].length) 
-            {
-            
-              var pf= new Primitive();
-              pf.AddVerts(v[0]);
-              var pb= new Primitive();
-              pb.AddVerts(v[1]);
-              return new Array(pf,pb);
-            }
-            
-            return undefined;
-        } 
-
-    
-
-
-        if (a instanceof Vert)
-        {
-            aDot=a.world.dot(this.normal);
-            bDot=b.world.dot(this.normal);
-            scaled = ((-this._D) - aDot) / ((bDot - aDot));
-            var v=new Vert();
-
-            v._world  = new Vector3(a.world.x + (scaled * (b.world.x - a.world.x)),a.world.y + (scaled * (b.world.y - a.world.y)),a.world.z + (scaled * (b.world.z - a.world.z)));
-            v._color  = new Vector3(a.color.x + (scaled * (b.color.x - a.color.x)),a.color.y + (scaled * (b.color.y - a.color.y)),a.color.z + (scaled * (b.color.z - a.color.z)));
-            v._texture= new Vector2(a.texture.x + (scaled * (b.texture.x - a.texture.x)),v.texture.y = a.texture.y + (scaled * (b.texture.y - a.texture.y)));      
-
-           return v;            
-    
-        }
-
-
-
-        aDot=a.dot(this.normal);
-        bDot=b.dot(this.normal);
-        
-      
-        scaled = (((-this._D) - aDot)) / ((bDot - aDot))
-        
-        return new Vector3(a.x + (scaled * (b.x - a.x)),a.y + (scaled * (b.y - a.y)),a.z + (scaled * (b.z - a.z)))
+       return this.SplitLineVec2(a,b);
 
 }
 

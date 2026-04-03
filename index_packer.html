@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+  body {
+    font-family: "Lucida Console", "Courier New", monospace;
+   
+  }
+
+  
+  
+
+  </style>
+</head>
+
+ <body>
+<script src="./libs/Common.js"></script>
+<script src="./libs/BitStream.js"></script>
+<script src="./libs/Packer.js"></script>
+<script src="./libs/MAP/Data.js"></script>
+
+
+
+<script>
+
+   var packer=new Archive();
+
+  function ConvertToArray() {
+    s=packer.ConvertToDataArray();
+    document.getElementById("mapsource").value=s;
+  }
+
+  function Clear() {
+    document.getElementById("mapsource").value="";
+    packer=new Archive();
+  }
+
+
+  function Test() {
+    document.getElementById("mapsource").value="";
+    packer=new Archive(DATA);
+  }
+
+
+  function AddToArchive() {
+
+
+    var text=    document.getElementById("mapsource").value; 
+          
+    let st=packer.encode(text);
+    document.getElementById("mapsource").value="";
+    //DebugOut(packer.decode(st)+"\n");
+  }
+  
+</script>
+
+
+
+<div class="right-side">
+ <textarea id="mapsource" name="mapsource" rows="48" cols="1000">
+
+
+
+</textarea>
+  <button onclick="AddToArchive()">Add to Archive</button>
+  <button onclick="ConvertToArray()">Convert to Array</button>
+  <button onclick="Clear()">Clear</button>
+  <button onclick="Test()">Test</button>
+<textarea id="debugout" name="debugout" rows="10" cols="1000"></textarea>
+
+</div>
+
+</div>
+
+

@@ -26,6 +26,8 @@ class BVH {
        this.xform_old=new Matrix4x4(); 
     }
     
+    renderLeaf(engine,num) {}
+    renderLeafs(engine) {} 
     
     build(polygons) {
         this.total_node_count=0;

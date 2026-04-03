@@ -13,8 +13,6 @@ const MIPMAPLEVEL =4;
 
 
 
-
-
 function CreateDummy( width,height,ra = 255,ga = 255,ba = 255,
                                    rb = 255,gb = 0,bb = 0)
 {
@@ -47,19 +45,19 @@ function CreateDummy( width,height,ra = 255,ga = 255,ba = 255,
 
 
 class Texture {
-    constructor() {
-        if (Intern_DummyTexture_init==false) {
-            Intern_DummyTexture_init=true;
-            Intern_DummyTexture.set(CreateDummy(Intern_DummyTexture_width,Intern_DummyTexture_height));
-        }
+    constructor(data= null,width,height) {
+         if (!data) {
+            data=CreateDummy(Intern_DummyTexture_width,Intern_DummyTexture_height);
+        } 
 
         
         this._width=Intern_DummyTexture_width;
         this._height=Intern_DummyTexture_height;
         this._buffer=new Array();
+        
         for (let i=0;i<MIPMAPLEVEL;i++) this._buffer.push(new Int32Array((this._width>>i)*(this._height>>i)));
         
-        this._buffer[0].set(Intern_DummyTexture);
+        this._buffer[0].set(data);
         this.buildMipMaps();
     }
 
@@ -107,9 +105,33 @@ class Texture {
 }
 
 
+class TextureManager {
+  constructor() {
+    this._textures= new Array();
+    this._dummy=new Texture(true);
+  }
+  
+  TextureInManager(name) {
+    for (let t of this._textures) if (name==t[0]) return t[1];
+    return null;
+  }
+  
+  AddTexture(name,texture) {
+    let i=this.TextureInManager(name);
+    if(i!=null) return i;
+      this._textures.push([name,texture]); 
+      return texture;
+  }
 
+  GetTextureByName(name) {
+      let i=this.TextureInManager(name);
+      if (i) return i;
+      return this._dummy;
+  } 
 
+}
 
+var global_texture_manager=new TextureManager();
 
 
 

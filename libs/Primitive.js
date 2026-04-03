@@ -73,20 +73,21 @@ class Polygon extends PrimitiveBase {
     /**
      * function 
      */
-    constructor (p,invert=false,scale=1) {
+    constructor (p,invert=false) {
             super();
            // this._verts= new Array();
            // this._sverts= new Array();
-    
+            this._texture=null;
             this._plane= new Ray(3);
             this._center= new Vector3();
             this._recal_plane=true;
             this._recal_center=true;
             this._counterClock=true;
             this._screen_center = new Vector4();
-            this._node_id=-1;               
             this._create_from_aabb=false;
-           
+            this._id=-1;
+            this._node_id=-1;               
+            this._leaf_id=-1;               
          
             if (p instanceof Polygon) {
 
@@ -94,20 +95,20 @@ class Polygon extends PrimitiveBase {
                  if (!invert) {
                     for (let i=0;i<p.verts.length;i++) 
                     {
-                       var pp=new Vert(p.verts[i],scale);
+                       var pp=new Vert(p.verts[i]);
                        this._verts.push(pp);
                     }
                 } else {
                     for (let i=p.verts.length-1;i>-1;i--) 
                     {
-                       var pp=new Vert(p.verts[i],scale);
+                       var pp=new Vert(p.verts[i]);
                        this._verts.push(pp);
                     }
 
 
                 }
-                this._plane=new Ray(p._plane);
-                //this.calcPlane();
+                //this._plane=new Ray(p._plane);
+                this.calcPlane();
                 this.calcCenterOfMass();
                 this.SetObjectMatrix(p.GetObjectMatrix());
                 this._was_best_splitter=p._was_best_splitter;
@@ -115,7 +116,10 @@ class Polygon extends PrimitiveBase {
                 this._render_type=p._render_type;
                 this._potential_portal=p._potential_portal;
                 this._create_from_aabb=p._create_from_aabb;
-    
+                this._id=p._id;
+                this._leaf_id=p._leaf_id;
+                this._node_id=p._node_id;
+                this._texture=p._texture;
                 return;          
             }
             
@@ -129,9 +133,9 @@ class Polygon extends PrimitiveBase {
                     if (p[i] instanceof Vert ||  p[i] instanceof Vector3)
                     {
                        let pp = new Vert(p[i]);
-                       pp.world.x=pp.world.x*scale;
-                       pp.world.y=pp.world.y*scale;
-                       pp.world.z=pp.world.z*scale;
+                       pp.world.x=pp.world.x;
+                       pp.world.y=pp.world.y;
+                       pp.world.z=pp.world.z;
 
                         this._verts.push(pp)
                     }
@@ -142,9 +146,9 @@ class Polygon extends PrimitiveBase {
                     if (p[i] instanceof Vert ||  p[i] instanceof Vector3)
                     {
                        let pp = new Vert(p[i]);
-                       pp.world.x=pp.world.x*scale;
-                       pp.world.y=pp.world.y*scale;
-                       pp.world.z=pp.world.z*scale;
+                       pp.world.x=pp.world.x;
+                       pp.world.y=pp.world.y;
+                       pp.world.z=pp.world.z;
 
                         this._verts.push(pp)
                     }
@@ -160,6 +164,50 @@ class Polygon extends PrimitiveBase {
             }
     
     }
+
+
+    static CreateByPlane(plane,size=10000) {
+        let verts=new Array();
+  
+        var absnormal=new Vector3(plane.normal);        
+         var aa=new Vector3(0.0,0.0,0.0);
+         absnormal.abs();
+  
+         if (absnormal.y > absnormal.z) {
+             if (absnormal.z > absnormal.x)  aa.z = 1.0; else aa.x = 1.0;
+         } else {
+             if (absnormal.y <= absnormal.x) aa.y = 1.0; else aa.x = 1.0;
+         }
+  
+        var normal=new Vector3(plane.normal); 
+  
+     
+  
+        var u = aa.cross(normal);u.normalize();
+        var v = u.cross(normal);v.normalize();
+        u=u.mul(size);
+        v=v.mul(size);
+       
+        var a=plane.origin.add(u.sub(v));
+        var b=plane.origin.add(u.add(v));
+        var c=plane.origin.sub(u.sub(v));
+        var d=plane.origin.sub(u.add(v));
+
+        verts.push(d);
+        verts.push(c);
+        verts.push(b);
+        verts.push(a);
+         
+        let p=new Polygon(verts)
+        p.calcPlane();
+        p.calcCenterOfMass();
+        p.setWorldTexture();
+        return p;
+ 
+    }
+  
+    
+    
     
     TransformByObjectMatrix() {
         var p=new Polygon(this);
@@ -189,6 +237,10 @@ class Polygon extends PrimitiveBase {
         this._render_type=p._render_type;
         this._potential_portal=p._potential_portal;
         this._create_from_aabb=p._create_from_aabb;
+        this._leaf_id=p._leaf_id;
+        this._node_id=p._node_id;
+        this._id=p._id;
+        this._texture=p._texture;
 
     }
     clalcAABB() {
@@ -336,7 +388,19 @@ class Polygon extends PrimitiveBase {
     /**
      * function 
      */
-    AddVert(v) {
+    AddVert(v,check) {
+          
+        if (check)
+          for (let vv of this._verts) {
+            let vvv=new Vector3(Math.abs(vv.world.x-v.world.x),
+                                Math.abs(vv.world.y-v.world.y),
+                                Math.abs(vv.world.z-v.world.z));
+                                let eps=0.000000001;
+                                //Number.EPSILON
+      //      if (vvv.x<=eps && vvv.y<=eps && vvv.z<=eps) {DebugOut("Double  "+this._verts.length+"\n");return;}
+           
+          }
+        
             this._verts.push(new Vert(v));
             this._recal_plane=true;
             this._recal_center=true;
@@ -386,6 +450,10 @@ class Polygon extends PrimitiveBase {
      */
     calcPlane(counterClock = false)
         {
+            if (this.vertices.length<3) {
+                DebugOut("DOOOOOOF");
+                return;
+            }
             this._counterClock=counterClock;
             this._recal_center=false;
             this._plane.origin = this.vertices[0].world;
@@ -441,6 +509,7 @@ class Polygon extends PrimitiveBase {
             {
                 var	ow = 1.0 /this.verts[j].screen.w;
                 this._sverts[j]       = new SVec();
+                this._sverts[j].alpha = this.verts[j].alpha;
     
                 this._sverts[j].color = this.verts[j].color;
                 this._sverts[j].x     = (rasterizer.screenCenterX() + this.verts[j].screen.x * ow * rasterizer.screenCenterX() * rasterizer.xScale())  ;
@@ -526,6 +595,10 @@ class Polygon extends PrimitiveBase {
     /**
      * function 
      */
+
+    SetAlpha(alpha) {
+        for (let v of this.verts) v.alpha=alpha;
+    }
     SetTestColor() {
             var a=new Vector3(128,128,128);
     
@@ -661,6 +734,17 @@ class Polygon extends PrimitiveBase {
            var scaled = ((-plane.D) - aDot) / ((bDot - aDot));
            var v=new Vert();
     
+           v.alpha  = v0.alpha + (scaled * (v1.alpha - v0.alpha));
+
+           v.normal = new Vector3(v0.normal.x + (scaled * (v1.normal.x - v0.normal.x)),
+                                  v0.normal.y + (scaled * (v1.normal.y - v0.normal.y)),
+                                  v0.normal.z + (scaled * (v1.normal.z - v0.normal.z)));
+
+           v.light  = new Vector3(v0.light.x + (scaled * (v1.light.x - v0.light.x)),
+                                  v0.light.y + (scaled * (v1.light.y - v0.light.y)),
+                                  v0.light.z + (scaled * (v1.light.z - v0.light.z)));
+           
+
            v.world = new Vector3(v0.world.x + (scaled * (v1.world.x - v0.world.x)),
                                   v0.world.y + (scaled * (v1.world.y - v0.world.y)),
                                   v0.world.z + (scaled * (v1.world.z - v0.world.z)));
@@ -668,7 +752,8 @@ class Polygon extends PrimitiveBase {
            v.color = new Vector3((v0.color.x + (scaled * (v1.color.x - v0.color.x))),
                                  (v0.color.y + (scaled * (v1.color.y - v0.color.y))),
                                  (v0.color.z + (scaled * (v1.color.z - v0.color.z))) );
-    
+
+                                 
     
                               
             v.texture = new Vector2(v0.texture.x + (scaled * (v1.texture.x - v0.texture.x)),v0.texture.y + (scaled * (v1.texture.y - v0.texture.y)));      
@@ -707,31 +792,37 @@ SplitPolyByPlane(plane)
     
          
          if (res0==COPLANAR ) {
-           fpoly.AddVert(new Vert(v0)); 
-           bpoly.AddVert(new Vert(v0)); 
+           fpoly.AddVert(new Vert(v0),true); 
+           bpoly.AddVert(new Vert(v0),true); 
          }
     
          if (res0==FRONT) 
          { 
-           fpoly.AddVert(new Vert(v0)); 
+           fpoly.AddVert(new Vert(v0),true); 
          }
 
          if (res0==BACK) 
          { 
-           bpoly.AddVert(new Vert(v0)); 
+           bpoly.AddVert(new Vert(v0),true); 
          }
          
-
-
-
-
          if ((res0==FRONT && res1==BACK) || (res1==FRONT && res0==BACK))
          {
            var aDot=v0.world.dot(plane.normal);
            var bDot=v1.world.dot(plane.normal);
            var scaled = ((-plane.D) - aDot) / ((bDot - aDot));
            var v=new Vert();
-    
+           v.alpha  = v0.alpha + (scaled * (v1.alpha - v0.alpha));
+
+           v.normal = new Vector3(v0.normal.x + (scaled * (v1.normal.x - v0.normal.x)),
+                                  v0.normal.y + (scaled * (v1.normal.y - v0.normal.y)),
+                                  v0.normal.z + (scaled * (v1.normal.z - v0.normal.z)));
+
+           v.light  = new Vector3(v0.light.x + (scaled * (v1.light.x - v0.light.x)),
+                                  v0.light.y + (scaled * (v1.light.y - v0.light.y)),
+                                  v0.light.z + (scaled * (v1.light.z - v0.light.z)));
+
+           
            v.world = new Vector3(v0.world.x + (scaled * (v1.world.x - v0.world.x)),
                                  v0.world.y + (scaled * (v1.world.y - v0.world.y)),
                                  v0.world.z + (scaled * (v1.world.z - v0.world.z)));
@@ -744,18 +835,19 @@ SplitPolyByPlane(plane)
                               
             v.texture = new Vector2(v0.texture.x + (scaled * (v1.texture.x - v0.texture.x)),v0.texture.y + (scaled * (v1.texture.y - v0.texture.y)));      
     
-           fpoly.AddVert(new Vert(v));
-           bpoly.AddVert(new Vert(v));
+           fpoly.AddVert(new Vert(v),true);
+           bpoly.AddVert(new Vert(v),true);
          }
        }  
-       bpoly.SetNormalColor(1,0,0);
-       fpoly.SetNormalColor(0,1,0);
+       
+       
+       
        
        if (fpoly.verts.length < 3) fpoly=null;
-        else fpoly.calcPlane();
+        else {fpoly.calcPlane(); fpoly.SetNormalColor(0,1,0);}
 
        if (bpoly.verts.length < 3) bpoly=null;
-        else bpoly.calcPlane();
+        else {bpoly.calcPlane();bpoly.SetNormalColor(1,0,0);}
 
         return [fpoly,bpoly];
      }
