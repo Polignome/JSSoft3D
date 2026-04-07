@@ -14,7 +14,7 @@ class CSGNode
         this._back=null;
         this._leaf=CSG_NONE_LEAF;
         this._plane=null;
-        if (planes != null) this.BuildUnion(planes,planes.length);
+        if (planes != null) this.BuildUnion(planes,planes.length-1);
     }
 
     GetDeepestNodeCount(c = 1) {
