@@ -127,15 +127,12 @@ class CSG {
        for (let i = 0;i<brush_list.length;i++)
        {
           let a= brush_list[i];
-          for (let j = 0/*i+1*/;j<brush_list.length;j++)
+          for (let j = i+1;j<brush_list.length;j++)
           {
              if (i===j) continue;
              let b= brush_list[j];
              if (!b._aabb.IntersectedByBounds(a._aabb,0)) continue;
-             
-             
              a.clip( b, false);
-             
              b.clip( a, true);
           } 
         
