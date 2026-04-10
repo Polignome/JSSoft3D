@@ -289,7 +289,6 @@ DebugOut() {
             } else cc=c;
              
                          
-
             if (c=='\n' && !multi_line_comment) {line_comment=false;}
             if (cc=="//" && !line_comment && !multi_line_comment)  {line_comment= true;}
             if (cc=="/*" && !line_comment && !multi_line_comment)  multi_line_comment= true;
@@ -312,7 +311,9 @@ DebugOut() {
 
             }
             
-            if (c=='\n' || (c==' ' && parm=='') ) {
+            
+            if ((c=='\n' || c.charCodeAt(0)==13) || (c==' ' && parm=='') ) 
+            {
 
                 if (ss.length!=0) {line.push(ss);}
                 if (c=='\n') {
