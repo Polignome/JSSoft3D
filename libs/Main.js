@@ -23,6 +23,8 @@ var mouse_posy_old=0;
 var mouse_posx_div=0;
 var mouse_posy_div=0;
 ////////////////////////////////////
+
+var test_pos=new Vector3()
 var m_wheel_delta=1000000;
 var use_timer = false;
 
@@ -100,6 +102,19 @@ function Render() {
 function UpdateKeys() {
 	
 	
+let s=10;
+
+     if (keys[(36)])test_pos.x+=s;
+     if (keys[(38)])test_pos.z+=s;
+     if (keys[(33)])test_pos.x-=s;
+
+     if (keys[(37)])test_pos.y-=s;
+     if (keys[(12)])test_pos.z-=s;
+     if (keys[(39)])test_pos.y+=s;
+
+     //if (keys[(35)])test_pos.z+=s;
+     //if (keys[(40)])test_pos.z-=s;
+     //if (keys[(34)])test_pos.z-=s;
 
 
 	if (keys[(90)]) {m_render_zbuffer=true;}
@@ -176,7 +191,7 @@ function renderTest() {
 
 function GameLoop() {
   
-	
+InitTest();	
 	Update();
 	rasterizer.Start(cam);
 	Render();
@@ -191,7 +206,7 @@ function GameLoop() {
          
 	}
 	if (bsp) bsp.renderLeafs(rasterizer);
-//	renderTest();
+	renderTest();
 	canvas.DrawCoursor();
 	canvas.Redraw();
 
@@ -281,8 +296,8 @@ function InitTest() {
 	target_portal=new Portal(verts);
 	verts=verts.reverse();
 
-
-	for (let v of verts) v.z*=-1;
+    DebugOut(test_pos.x+" "+test_pos.y+" "+test_pos.y+"\n ")
+	for (let v of verts) {v.z*=-1;v=v.add(test_pos);}
        source_portal=new Portal(verts);
   }
 
@@ -295,7 +310,7 @@ function InitTest() {
 	 }
 test_ports=polys;
 //	 rasterizer.AddPrimitive(polys);
-    rasterizer.BuildBVH();
+    //rasterizer.BuildBVH();
 
 
 }
@@ -311,7 +326,7 @@ function SaveHelp(x,y) {
 }
 
 function Init() {
-InitTest();
+
 ClearDebugOut();
 
    for (let x=0;x<4;x++)
@@ -623,10 +638,11 @@ window.addEventListener("keydown", function(event) {
 	if (event.defaultPrevented) {
 	  return;
 	}
-   //console.log(event.keyCode);
+   console.log(event.keyCode);
    prekeys[event.keyCode]=keys[event.keyCode];
    keys[event.keyCode]=true;
 
+   
    m_last_key_down=event.keyCode;
 	switch (event.keyCode) {
         default: break;
