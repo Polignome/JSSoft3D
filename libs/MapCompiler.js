@@ -2,8 +2,9 @@ const COMPILER_CSG =1<<1;
 const COMPILER_REMOVE_VIS =(1<<2);
 const COMPILER_FINAL_BSP =(1<<3);
 const COMPILER_BUILD_PORTALS =(1<<4);
+const COMPILER_BUILD_PVS =(1<<5);
 const COMPILER_DEBUG_MODE =(1<<8);
-const COMPILER_ALL = COMPILER_CSG | COMPILER_REMOVE_VIS | COMPILER_FINAL_BSP | COMPILER_BUILD_PORTALS | COMPILER_DEBUG_MODE;
+const COMPILER_ALL = COMPILER_CSG | COMPILER_REMOVE_VIS | COMPILER_FINAL_BSP | COMPILER_BUILD_PORTALS | COMPILER_DEBUG_MODE | COMPILER_BUILD_PVS; 
 
 
 const COMPILER_NO_ERRORS =0;
@@ -25,8 +26,9 @@ class MapCompiler {
        this.brush_list=null;
        this.bsp =null;
        var debug=this.DebugOutDummy;
+       var debug=DebugOut;
        
-       if (options | COMPILER_DEBUG_MODE)  var debug=DebugOut;
+       if (options | COMPILER_DEBUG_MODE)  
 
        {
 
@@ -37,7 +39,16 @@ class MapCompiler {
           this.brush_list=this.map.GetBrushList();
           if (this.brush_list.length<=0) {debug(" ...Error\n");return COMPILER_MAP_READER_ERROR;}
           debug("...Ok\n");
-       }
+          debug("    |- Num Brushes...:"+this.brush_list.length+"\n");
+          if (options | COMPILER_DEBUG_MODE) {
+            let count=0;
+            for (let b of this.brush_list) {
+               count+=b.primitives.length;
+            }
+          debug("    |- Num Polygons..:"+count+"\n");
+
+          }
+        }
 
         if (!(options & COMPILER_CSG)) return COMPILER_NO_ERRORS;
 
@@ -48,12 +59,14 @@ class MapCompiler {
          this.polylist= new Array();
          for (let b of this.brush_list) 
          {
-	      for (let p of b.primitives) {
-		     let pp=new Polygon(p,false,1);
-		     pp.render_type=POLY_PERSPECTIVE_TEXTURED;
-   		     this.polylist.push(pp);
-	        }
+ 	         for (let p of b.primitives) 
+           {
+		          let pp=new Polygon(p,false,1);
+		          pp.render_type=POLY_PERSPECTIVE_TEXTURED;
+   		        this.polylist.push(pp);
+	         }
          }
+         this.brush_list=null;
           if (this.polylist.length<=0) {debug("...Error\n "); return COMPILER_CSG_ERROR;}
           debug("...Ok\n");
         }

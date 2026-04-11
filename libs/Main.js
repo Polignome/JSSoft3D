@@ -31,6 +31,7 @@ var fps=0;
 //var meter = new FPSMeter();
 
 var meter = new FPSMeter(document.getElementById('render'), { graph: 2 });
+var compiler_options= COMPILER_ALL;
 
 ////////////////////////////////////
 var render_zbuffer =false;
@@ -236,10 +237,28 @@ function LoadMap() {
 	   reader.onload = function() {
             const text = reader.result;
 		//	document.getElementById("").value = text;
+                rasterizer.FlushPrimitives();
           
 			m_map_compiler= new MapCompiler();
-            m_map_compiler.CompileFromString(text);
-            rasterizer.SetBSP(m_map_compiler.bsp) ;
+            m_map_compiler.CompileFromString(text,compiler_options);
+
+            if (m_map_compiler.brush_list)
+			{ 
+				for (let b of m_map_compiler.brush_list)rasterizer.AddPrimitive(b.primitives);
+				rasterizer.BuildBVH();
+			}
+
+            if (m_map_compiler.polylist) {
+				rasterizer.AddPrimitive(m_map_compiler.polylist);
+                rasterizer.BuildBVH();
+			}
+			
+			if (m_map_compiler.bsp) {
+                rasterizer.SetBSP(m_map_compiler.bsp) ;
+			}
+
+
+			
 		};
        reader.readAsText(file);  
 	}
@@ -420,11 +439,28 @@ let v0=new Array(new Vector3(0,0,0),new Vector3(10,0,0),new Vector3(10,10,0));
          })
 	}
 
-///////////////////////////////////////////////////////////////////////////////
+	{
+	   const checkbox = document.getElementById('debug_checkbox')
+	     
+
+	    checkbox.addEventListener('change', (event) => {
+           if (!event.currentTarget.checked)
+		   {
+			 
+			 compiler_options &=~COMPILER_DEBUG_MODE;
+		   } else compiler_options |=COMPILER_DEBUG_MODE;
+         
+		 DebugOut("> "+compiler_options+"\n");
+		})
+	}
+
+
+
+
 
 	{
 	   const checkbox = document.getElementById('csg_checkbox')
-	     checkbox.checked=false;
+	    // checkbox.checked=false;
        
 	    checkbox.addEventListener('change', (event) => {
 			if (!event.currentTarget.checked) {
@@ -432,61 +468,125 @@ let v0=new Array(new Vector3(0,0,0),new Vector3(10,0,0),new Vector3(10,10,0));
 				document.getElementById('bsp_checkbox').checked=false;
 				document.getElementById('por_checkbox').checked=false;
 				document.getElementById('pvs_checkbox').checked=false;
-			}
-           //m_render_zbuffer=event.currentTarget.checked;
+
+				document.getElementById('vis_checkbox').disabled =true;
+				document.getElementById('bsp_checkbox').disabled =true;
+				document.getElementById('por_checkbox').disabled =true;
+				document.getElementById('pvs_checkbox').disabled =true;
+			 
+				compiler_options &=~COMPILER_CSG;
+				compiler_options &=~COMPILER_REMOVE_VIS;
+			    compiler_options &=~COMPILER_FINAL_BSP;
+                compiler_options &=~COMPILER_BUILD_PORTALS;
+ 			    compiler_options &=~COMPILER_BUILD_PVS;
+			
+			} else {document.getElementById('vis_checkbox').disabled =false; compiler_options |=COMPILER_CSG;}
+           DebugOut("> "+compiler_options+"\n");
          })
 	}
 
 
 	{
 	   const checkbox = document.getElementById('vis_checkbox')
-	     checkbox.checked=false;
+	  //   checkbox.checked=false;
        
  	    checkbox.addEventListener('change', (event) => {
 			if (!event.currentTarget.checked) {
 				document.getElementById('bsp_checkbox').checked=false;
 				document.getElementById('por_checkbox').checked=false;
 				document.getElementById('pvs_checkbox').checked=false;
-			}
-           //m_render_zbuffer=event.currentTarget.checked;
+
+				document.getElementById('bsp_checkbox').disabled =true;
+				document.getElementById('por_checkbox').disabled =true;
+				document.getElementById('pvs_checkbox').disabled =true;
+  			    compiler_options &=~COMPILER_REMOVE_VIS;
+
+			    compiler_options &=~COMPILER_FINAL_BSP;
+                compiler_options &=~COMPILER_BUILD_PORTALS;
+ 			    compiler_options &=~COMPILER_BUILD_PVS;
+
+
+			} else {document.getElementById('bsp_checkbox').disabled =false;compiler_options |=COMPILER_REMOVE_VIS;}
+			DebugOut("> "+compiler_options+"\n");
+
+			//m_render_zbuffer=event.currentTarget.checked;
          })
 	}
 
 	{
 	   const checkbox = document.getElementById('bsp_checkbox')
-	     checkbox.checked=false;
+	     //checkbox.checked=false;
        
 	    checkbox.addEventListener('change', (event) => {
 			if (!event.currentTarget.checked) {
 				document.getElementById('por_checkbox').checked=false;
 				document.getElementById('pvs_checkbox').checked=false;
-			}
+
+				document.getElementById('por_checkbox').disabled =true;
+				document.getElementById('pvs_checkbox').disabled =true;
+                compiler_options &=~COMPILER_FINAL_BSP;
+
+                compiler_options &=~COMPILER_BUILD_PORTALS;
+ 			    compiler_options &=~COMPILER_BUILD_PVS;
+
+			} else {document.getElementById('por_checkbox').disabled =false; compiler_options |=COMPILER_FINAL_BSP;}
+			DebugOut("> "+compiler_options+"\n");
+				
            //m_render_zbuffer=event.currentTarget.checked;
          })
 	}
 
 	{
 	   const checkbox = document.getElementById('por_checkbox')
-	     checkbox.checked=false;
+	     //checkbox.checked=false;
        
 	    checkbox.addEventListener('change', (event) => {
 			if (!event.currentTarget.checked) {
-				document.getElementById('por_checkbox').checked=false;
 				document.getElementById('pvs_checkbox').checked=false;
-			}
+
+				document.getElementById('pvs_checkbox').disabled =true;
+                compiler_options &=~COMPILER_BUILD_PORTALS;
+ 			    compiler_options &=~COMPILER_BUILD_PVS;
+
+			} else {document.getElementById('pvs_checkbox').disabled =false;compiler_options |=COMPILER_BUILD_PORTALS;}
+			DebugOut("> "+compiler_options+"\n");
+				
            //m_render_zbuffer=event.currentTarget.checked;
          })
 	}
 
 	{
 	   const checkbox = document.getElementById('pvs_checkbox')
-	     checkbox.checked=false;
+	     //checkbox.checked=false;
        
 	    checkbox.addEventListener('change', (event) => {
-           //m_render_zbuffer=event.currentTarget.checked;
+			if (!event.currentTarget.checked) {
+			   compiler_options &=~COMPILER_BUILD_PVS;
+			} else compiler_options |=COMPILER_BUILD_PVS;
+			DebugOut("> "+compiler_options+"\n");
          })
 	}
 
+
+   ///////////////////////////////////////////////////////////////////////////////
+	document.getElementById('debug_checkbox').checked =COMPILER_DEBUG_MODE & compiler_options; 
+	document.getElementById('csg_checkbox').checked =COMPILER_CSG & compiler_options; 
+	document.getElementById('vis_checkbox').checked =COMPILER_REMOVE_VIS & compiler_options; 
+	document.getElementById('bsp_checkbox').checked =COMPILER_FINAL_BSP & compiler_options; 
+	document.getElementById('por_checkbox').checked =COMPILER_BUILD_PORTALS & compiler_options; 
+	document.getElementById('pvs_checkbox').checked =COMPILER_BUILD_PVS & compiler_options; 
+
+
+
+
+	document.getElementById('debug_checkbox').disabled = !document.getElementById('debug_checkbox').checked;
+	document.getElementById('csg_checkbox').disabled = !document.getElementById('csg_checkbox').checked;
+	document.getElementById('vis_checkbox').disabled = !document.getElementById('vis_checkbox').checked;
+	document.getElementById('bsp_checkbox').disabled = !document.getElementById('bsp_checkbox').checked;
+	document.getElementById('por_checkbox').disabled = !document.getElementById('por_checkbox').checked;
+	document.getElementById('pvs_checkbox').disabled = !document.getElementById('pvs_checkbox').checked;
+
+	///////////////////////////////////////////////////////////////////////////////
 
 
 
