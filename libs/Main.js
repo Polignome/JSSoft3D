@@ -41,6 +41,7 @@ var m_use_spanbuffer =true;
 var m_show_fps=true;
 var m_main_portals=[];
 var m_main_primitives=[];
+var m_map_compiler=null;
 
 var m_bsp_center=new Vector2(0,0);
 const MOUSE_BUTTON_LEFT = 1<<1;
@@ -215,43 +216,8 @@ meter.tickStart();
 
 
 function ReadMapFromString() {
-	bsp=null;
-  DebugOut("Reset Rasterizer\n");	
-  rasterizer.Reset();
-  DebugOut("Read Mapfile\n");	
   var text=    document.getElementById("mapsource").value;
-  var mapparser= new MAPParser();
-  var map =mapparser.LoadMapFromString(text);
-  DebugOut("Ready\n");	
-  
-   
- 
-  let brush_list=map.GetBrushList();
- 
-  CSG.union(brush_list)
-  polylist= new Array();
 
-  
-  for (let b of brush_list) {
-	for (p of b.primitives) {
-		let pp=new Polygon(p,false,1);
-		pp.render_type=POLY_PERSPECTIVE_TEXTURED;
-		polylist.push(pp);
-	}
-  }
-
-  rasterizer.AddPrimitive(polylist);
- rasterizer.BuildBVH();
-/*
-
-  let aabb= new AABB(polylist);
-  let polylist2=aabb.BuildPolygons(100);
-  for (let p of polylist2) polylist.push(p);
- 
-  rasterizer.AddPrimitive(polylist);
-  rasterizer.BuildBSP();
- // rasterizer.BuildBVH();
- */
 }
 
 function readBytes(path) {
@@ -263,20 +229,22 @@ function LoadMap() {
 	
 	var input = document.createElement('input');
     input.type = 'file';
-
     input.onchange = e => { 
        const file = e.target.files[0];
   	   const reader = new FileReader();	   
 	   console.log(file.name);  
 	   reader.onload = function() {
             const text = reader.result;
-			document.getElementById("mapsource").value = text;
-        };
+		//	document.getElementById("").value = text;
+          
+			m_map_compiler= new MapCompiler();
+            m_map_compiler.CompileFromString(text);
+            rasterizer.SetBSP(m_map_compiler.bsp) ;
+		};
        reader.readAsText(file);  
 	}
 
    input.click();
- //  document.getElementById("mapsource").value="";
 }
 
 
@@ -444,8 +412,6 @@ let v0=new Array(new Vector3(0,0,0),new Vector3(10,0,0),new Vector3(10,10,0));
 
 	
 	{
-	 
-	 
 	   const checkbox = document.getElementById('render_zbuffer_checkbox')
 	   checkbox.checked=m_render_zbuffer;
 
@@ -453,6 +419,74 @@ let v0=new Array(new Vector3(0,0,0),new Vector3(10,0,0),new Vector3(10,10,0));
            m_render_zbuffer=event.currentTarget.checked;
          })
 	}
+
+///////////////////////////////////////////////////////////////////////////////
+
+	{
+	   const checkbox = document.getElementById('csg_checkbox')
+	     checkbox.checked=false;
+       
+	    checkbox.addEventListener('change', (event) => {
+			if (!event.currentTarget.checked) {
+				document.getElementById('vis_checkbox').checked=false;
+				document.getElementById('bsp_checkbox').checked=false;
+				document.getElementById('por_checkbox').checked=false;
+				document.getElementById('pvs_checkbox').checked=false;
+			}
+           //m_render_zbuffer=event.currentTarget.checked;
+         })
+	}
+
+
+	{
+	   const checkbox = document.getElementById('vis_checkbox')
+	     checkbox.checked=false;
+       
+ 	    checkbox.addEventListener('change', (event) => {
+			if (!event.currentTarget.checked) {
+				document.getElementById('bsp_checkbox').checked=false;
+				document.getElementById('por_checkbox').checked=false;
+				document.getElementById('pvs_checkbox').checked=false;
+			}
+           //m_render_zbuffer=event.currentTarget.checked;
+         })
+	}
+
+	{
+	   const checkbox = document.getElementById('bsp_checkbox')
+	     checkbox.checked=false;
+       
+	    checkbox.addEventListener('change', (event) => {
+			if (!event.currentTarget.checked) {
+				document.getElementById('por_checkbox').checked=false;
+				document.getElementById('pvs_checkbox').checked=false;
+			}
+           //m_render_zbuffer=event.currentTarget.checked;
+         })
+	}
+
+	{
+	   const checkbox = document.getElementById('por_checkbox')
+	     checkbox.checked=false;
+       
+	    checkbox.addEventListener('change', (event) => {
+			if (!event.currentTarget.checked) {
+				document.getElementById('por_checkbox').checked=false;
+				document.getElementById('pvs_checkbox').checked=false;
+			}
+           //m_render_zbuffer=event.currentTarget.checked;
+         })
+	}
+
+	{
+	   const checkbox = document.getElementById('pvs_checkbox')
+	     checkbox.checked=false;
+       
+	    checkbox.addEventListener('change', (event) => {
+           //m_render_zbuffer=event.currentTarget.checked;
+         })
+	}
+
 
 
 

@@ -1,0 +1,103 @@
+const COMPILER_CSG =1<<1;
+const COMPILER_REMOVE_VIS =(1<<2);
+const COMPILER_FINAL_BSP =(1<<3);
+const COMPILER_BUILD_PORTALS =(1<<4);
+const COMPILER_DEBUG_MODE =(1<<8);
+const COMPILER_ALL = COMPILER_CSG | COMPILER_REMOVE_VIS | COMPILER_FINAL_BSP | COMPILER_BUILD_PORTALS | COMPILER_DEBUG_MODE;
+
+
+const COMPILER_NO_ERRORS =0;
+const COMPILER_MAP_READER_ERROR =1;
+const COMPILER_CSG_ERROR =2;
+const COMPILER_REMOVE_ERROR =3;
+
+class MapCompiler {
+    constructor() {
+       this.map=null;
+       this.brush_list=null;
+       this.polylist=null;
+       this.bsp=null;
+    }
+
+    DebugOutDummy(data) {} 
+    CompileFromString(map_string,options=COMPILER_ALL) {
+       this.map=null;
+       this.brush_list=null;
+       this.bsp =null;
+       var debug=this.DebugOutDummy;
+       
+       if (options | COMPILER_DEBUG_MODE)  var debug=DebugOut;
+
+       {
+
+          debug("Parse Map...........................: ");
+          var mapparser= new MAPParser();
+          this.map =mapparser.LoadMapFromString(map_string);
+          if (!this.map) {debug(" ...Error\n");return COMPILER_MAP_READER_ERROR;}
+          this.brush_list=this.map.GetBrushList();
+          if (this.brush_list.length<=0) {debug(" ...Error\n");return COMPILER_MAP_READER_ERROR;}
+          debug("...Ok\n");
+       }
+
+        if (!(options & COMPILER_CSG)) return COMPILER_NO_ERRORS;
+
+        {
+
+          debug("CSG.................................: ");
+         CSG.union(this.brush_list)
+         this.polylist= new Array();
+         for (let b of this.brush_list) 
+         {
+	      for (let p of b.primitives) {
+		     let pp=new Polygon(p,false,1);
+		     pp.render_type=POLY_PERSPECTIVE_TEXTURED;
+   		     this.polylist.push(pp);
+	        }
+         }
+          if (this.polylist.length<=0) {debug("...Error\n "); return COMPILER_CSG_ERROR;}
+          debug("...Ok\n");
+        }
+ 
+        if (!(options & COMPILER_REMOVE_VIS)) return COMPILER_NO_ERRORS;
+        
+        {
+          debug("Remove no visible Polygons..........: ");
+          var aabb= new AABB(this.polylist);
+          var polylist2=aabb.BuildPolygons(100);
+          var polys_in=this.polylist.length; 
+          for (let p of polylist2) this.polylist.push(p);
+          this.bsp=new BSPTree(this.polylist);
+          this.bsp.BuildPortals();
+          NonVisPolygonsRemover.Remove(this.bsp);
+          this.polylist=this.bsp.ExtractPrims();
+          var polys_out=this.polylist.length;
+          this.polygons=this.bsp.ExtractPrims();
+          if (this.polygons.length<=0) {debug("...Error\n"); return COMPILER_REMOVE_ERROR;}
+          debug("...Ok\n");
+          debug("    |- Num Leafs.....:"+this.bsp._leaf_list.length+"\n");
+          debug("    |- Polys in......:"+polys_in+"\n");
+          debug("    |- Polys out.....:"+polys_out+"\n");
+        }
+
+        if (!(options & COMPILER_FINAL_BSP)) return COMPILER_NO_ERRORS;
+        {
+          debug("Build final BSP.....................: ");
+          this.bsp=new BSPTree(this.polylist);
+          this.polylist=null;
+          debug("...Ok\n");
+          debug("    |- Num Leafs.....:"+this.bsp._leaf_list.length+"\n");
+          debug("    |- Num Nodes.....:"+this.bsp._node_list.length+"\n");
+        }
+
+        if (!(options & COMPILER_BUILD_PORTALS)) return COMPILER_NO_ERRORS;
+        {
+          debug("Build Portals.......................: ")
+          this.bsp.BuildPortals();
+          debug("...Ok\n");
+          debug("    |- Num Portals...:"+this.bsp._portal_list.length+"\n");
+        } 
+
+
+        return COMPILER_NO_ERRORS;
+    }
+}

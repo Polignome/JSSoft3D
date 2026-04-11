@@ -63,7 +63,7 @@ class BSPNode {
               for (let po of polygons) // 
               {
                  let res=this._parent._plane.Classify(po);
-                 if (res===COPLANAR) { p._was_best_splitter=true;}
+                 if (res===COPLANAR) { po._was_best_splitter=true;}
               }
 
 
@@ -436,26 +436,9 @@ class BSPTree {
         this._portal_list=new Array();
         this._root=null;
         this.total_node_count=0;
-        DebugOut("BSP1         \n");
         this.Build(polygons);
 
 
-        DebugOut("Portals1     \n");
-        this.BuildPortals();
-
-        DebugOut("Remove       \n");
-        NonVisPolygonsRemover.Remove(this);
-         
-        polygons=this.ExtractPrims();
-        DebugOut("BSP2         \n");
-        this.Build(polygons);
-        this.BuildPortals();
-
-
-  
-
-//        DebugOut("VIS          \n");
-//        VIS.DoVIS(this);
 
     }
 
@@ -596,7 +579,7 @@ BuildPortals() {
          }
          
         }
-        DebugOut("Num Portals :"+this._portal_list.length+"\n");
+        
     }
 
 }

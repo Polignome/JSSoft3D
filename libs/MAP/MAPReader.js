@@ -290,7 +290,7 @@ DebugOut() {
              
                          
 
-            if (c=='\n' && !multi_line_comment) {line_comment=false;}
+            if ((c=='\n' || c.charCodeAt(0)==13) && !multi_line_comment) {line_comment=false;}
             if (cc=="//" && !line_comment && !multi_line_comment)  {line_comment= true;}
             if (cc=="/*" && !line_comment && !multi_line_comment)  multi_line_comment= true;
             if (cc=="*/" && !line_comment) 
@@ -312,7 +312,7 @@ DebugOut() {
 
             }
             
-            if (c=='\n' || (c==' ' && parm=='') ) {
+            if ((c=='\n' || c.charCodeAt(0)==13)|| (c==' ' && parm=='') ) {
 
                 if (ss.length!=0) {line.push(ss);}
                 if (c=='\n') {
@@ -523,16 +523,13 @@ LoadMapFromString(s) {
         this.map = new Map;
         var error=this.SplitString(s);
        if (error != PARSER_NO_ERRORS) {
-        DebugOut("Parser Error "+error+"\n");
         return null;
        }
        var err=this.ParseMap(null);
 
        if (error != PARSER_NO_ERRORS) {
-        DebugOut("Parser Error "+error+"\n");
         return null;
        }
-        DebugOut("No Errors \n");
          
        return this.map;
     }

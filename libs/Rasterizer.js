@@ -518,6 +518,11 @@ BuildBVH() {
     }
 
     
+
+    SetBSP(bsp) {
+          this._bhv=bsp;
+    }
+
     BuildBSP() {
        this._bhv= new BSPTree(this._primitives); 
     }
