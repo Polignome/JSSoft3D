@@ -230,8 +230,7 @@ function ReadMapFromString() {
  
   CSG.union(brush_list)
   polylist= new Array();
- 
- 
+
   
   for (let b of brush_list) {
 	for (p of b.primitives) {
@@ -241,7 +240,9 @@ function ReadMapFromString() {
 	}
   }
 
-
+  rasterizer.AddPrimitive(polylist);
+ rasterizer.BuildBVH();
+/*
 
   let aabb= new AABB(polylist);
   let polylist2=aabb.BuildPolygons(100);
@@ -250,7 +251,7 @@ function ReadMapFromString() {
   rasterizer.AddPrimitive(polylist);
   rasterizer.BuildBSP();
  // rasterizer.BuildBVH();
- 
+ */
 }
 
 function readBytes(path) {
