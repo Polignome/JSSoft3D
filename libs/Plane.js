@@ -489,3 +489,28 @@ function PointOnEndge(a,b,p,epsilon=1e-9) {
     if (dotVal>abLenSq ) return EDGE_POINT_NOT_ON_EDGE;
    return EDGE_POINT_ON_EDGE;
 }
+const EDGE_EDEG_ONE_POINT_ON_EDGE =-1;
+const EDGE_EDEG_FAIELD = 0;
+const EDGE_EDEG_CONGRUENT = 1;
+const EDGE_EDEG_OVERLAP = 2;
+
+function EdgeOnEdge(a1,b1,a2,b2) {
+       let res0=PointOnEndge(a1,b1,a2);
+       let res1=PointOnEndge(a1,b1,b2);
+       let res2=PointOnEndge(a2,b2,a1);
+       let res3=PointOnEndge(a2,b2,b1);
+       DebugOut(res0+" "+res1+" "+res2+" "+res3+" "+"\n")
+       if ((res0=== EDGE_POINT_ON_POINT    && res1=== EDGE_POINT_ON_POINT   ) || (res2=== EDGE_POINT_ON_POINT    && res3=== EDGE_POINT_ON_POINT)) return EDGE_EDEG_CONGRUENT;
+       if ((res0=== EDGE_POINT_NOT_ON_EDGE && res1=== EDGE_POINT_NOT_ON_EDGE) || (res2=== EDGE_POINT_NOT_ON_EDGE && res3=== EDGE_POINT_NOT_ON_EDGE))return EDGE_EDEG_FAIELD;
+
+                      
+       if ((res0=== EDGE_POINT_ON_POINT && res1=== EDGE_POINT_NOT_ON_EDGE  && res2=== EDGE_POINT_NOT_ON_EDGE && res3=== EDGE_POINT_ON_POINT) ||     // 1 0 0 1
+           (res0=== EDGE_POINT_NOT_ON_EDGE && res1=== EDGE_POINT_ON_POINT  && res2=== EDGE_POINT_ON_POINT && res3=== EDGE_POINT_NOT_ON_EDGE) ||     // 0 1 1 0
+           (res0=== EDGE_POINT_ON_POINT && res1=== EDGE_POINT_NOT_ON_EDGE  && res2=== EDGE_POINT_ON_POINT && res3=== EDGE_POINT_NOT_ON_EDGE) ||     // 1 0 1 0
+           (res0=== EDGE_POINT_NOT_ON_EDGE && res1=== EDGE_POINT_ON_POINT  && res2=== EDGE_POINT_NOT_ON_EDGE && res3=== EDGE_POINT_ON_POINT)        // 0 1 0 1
+        
+        ) return EDGE_EDEG_ONE_POINT_ON_EDGE;      
+       
+       return  EDGE_EDEG_OVERLAP;
+
+}
