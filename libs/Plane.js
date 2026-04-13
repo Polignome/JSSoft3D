@@ -440,14 +440,6 @@ Split(a, b) {
 
 }
 
-
-
-
-
-   
-   
-  
-
 }
 
 function lineLineIntersection(A,B,C,D){
@@ -475,4 +467,25 @@ function lineLineIntersection(A,B,C,D){
         var y = (a1*c2 - a2*c1)/determinant;
         return new Vector2(x|0, y|0);
     }
+}
+
+
+const EDGE_POINT_NOT_ON_EDGE =0
+const EDGE_POINT_ON_POINT =1
+const EDGE_POINT_ON_EDGE =2
+
+function PointOnEndge(a,b,p,epsilon=1e-9) {
+   if (p.Equal(a,epsilon) || p.Equal(b,epsilon)) return EDGE_POINT_ON_POINT;
+   let ab = b.sub(a)
+   let ap = p.sub(a)
+  
+    let crossVec   = ap.cross(ab);
+    let crossLenSq = crossVec.dot(crossVec);
+
+    if (crossLenSq> epsilon * epsilon) return EDGE_POINT_NOT_ON_EDGE;
+    const dotVal = ap.dot(ab);         
+    if (dotVal<0) return EDGE_POINT_NOT_ON_EDGE;
+    const abLenSq = ab.dot(ab);         
+    if (dotVal>abLenSq ) return EDGE_POINT_NOT_ON_EDGE;
+   return EDGE_POINT_ON_EDGE;
 }
