@@ -18,6 +18,13 @@ class Matrix {
         for (let i=0;i<this._data.length;i++) this._data[i]=0;
         
     }
+   Equal(m,epsilon=0) {
+      if (this._N != m._N || this._M != m._M )return 0;
+      for (let i=0;i< this._data.length;i++)  {
+        if (!(Math.Abs(this._data[i],m._data[i])<= epsilon)) return false;
+      }
+      return true;
+   }
 
 
    toStr() {
