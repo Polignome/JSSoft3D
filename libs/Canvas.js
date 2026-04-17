@@ -139,6 +139,67 @@ async function saveBMPAsync(filename, width, height, rgbaBuffer) {
     saveRGBAtoBMP(filename, width, height, rgbaBuffer);
 }
 
+
+class Rect {
+    constructor(left=null,top=null,right=null,bottom=null) {
+       this._top=-1;
+       this._left=-1;
+       this._bottom=-1;
+       this._right=-1;
+       this._width=-1;
+       this._height=-1;
+       this.Set(left,top,right,bottom);
+    }
+
+
+    Set(left=null,top=null,rigth=null,bottom=null) {
+        if (left instanceof Rect) {
+            this._top=left.top;
+            this._bottom=left.bottom;
+            this._left=left.left;
+            this._right=left.right;
+            this._height=left.height;
+            this._width=left.width;
+            return;
+        }
+        if ((typeof left === "number") &&
+            (typeof top === "number") && 
+            (typeof rigth === "number") && 
+            (typeof bottom === "number"))
+
+        {
+            this._top=top;
+            this._bottom=bottom;
+            this._left=left;
+            this._right=right;
+            this._height=Math.abs(this.bottom-this.top);
+            this._width=Math.abs(this.right-this.left);
+            return;
+        }
+
+
+    }
+
+    get top()    {return this._top;}
+    get left()   {return this._left;}
+    get bottom() {return this._bottom;}
+    get right()  {return this._right;}
+    get width()  {return this._width;}
+    get height() {return this._height;}
+
+
+    set top(a)    {this._top=a;    this._height = Math.abs(this.bottom-this.top);}
+    set bottom(a) {this._bottom=a; this._height = Math.abs(this.bottom-this.top);}
+    set left(a)   {this._left=a;   this._width  = Math.abs(this.right-this.left);}
+    set right(a)  {this._right=a;  this._width  = Math.abs(this.right-this.left);}
+    set width(a)  {this._width=a;  this._right  = this._left+this._width;}
+    set height(a) {this._height=a; this._bottom = this._top+this._height;}
+
+
+}
+
+
+
 class Canvas  {
 
 
