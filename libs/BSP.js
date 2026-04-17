@@ -50,6 +50,7 @@ class BSPNode {
         this._node_type=BSP_NODE;
         this._node_id=-1;
         this._owner=ROOT_OWNER;
+        this._leaf_id=-1;
 
         if (parent==null) this._node_type=BSP_ROOD;
 
@@ -68,7 +69,7 @@ class BSPNode {
 
 
               this._polygons = polygons;
-              
+              this._leaf_id=tree._leaf_list.length;
               tree._leaf_list.push(this); 
               this._node_type=BSP_LEAF;
               this._leaf=this;
