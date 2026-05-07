@@ -754,7 +754,8 @@ class Polygon extends PrimitiveBase {
                                  (v0.color.z + (scaled * (v1.color.z - v0.color.z))) );
 
                                  
-    
+           if (USE_AXIS_SORT_AND_VECTOR_SNAP) v.world.snap();                                
+
                               
             v.texture = new Vector2(v0.texture.x + (scaled * (v1.texture.x - v0.texture.x)),v0.texture.y + (scaled * (v1.texture.y - v0.texture.y)));      
     
@@ -834,7 +835,8 @@ SplitPolyByPlane(plane)
     
                               
             v.texture = new Vector2(v0.texture.x + (scaled * (v1.texture.x - v0.texture.x)),v0.texture.y + (scaled * (v1.texture.y - v0.texture.y)));      
-    
+            if (USE_AXIS_SORT_AND_VECTOR_SNAP) v.world.snap();                                
+
            fpoly.AddVert(new Vert(v),true);
            bpoly.AddVert(new Vert(v),true);
          }

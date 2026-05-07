@@ -24,6 +24,11 @@ class Vert {
         return out;
     }
 
+    snap(eps = 0.01) 
+    {
+       this.world.snap(eps);
+        
+    }
     constructor(v) {
         if (v instanceof Vert)
         {

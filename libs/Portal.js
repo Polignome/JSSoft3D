@@ -162,7 +162,8 @@ SplitByPlane(plane)
                                v0.y + (scaled * (v1.y - v0.y)),
                                v0.z + (scaled * (v1.z - v0.z)));
     
-           
+           if (USE_AXIS_SORT_AND_VECTOR_SNAP) v.snap();                                
+
            fpoly.verts.push(v);
            bpoly.verts.push(new Vector3(v));
          }

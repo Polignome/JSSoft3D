@@ -196,17 +196,7 @@ InitTest();
 	rasterizer.Start(cam);
 	Render();
 
-	if (m_render_zbuffer) {
-   	   //rasterizer.IBufferToScreen();	
-	   rasterizer.ZBufferToScreenOLD();
-	}
-	if (rasterizer._bhv) {
-    //   rasterizer._bhv.renderLeafs(rasterizer);
-       //rasterizer._bhv.renderPortals(rasterizer)
-         
-	}
-	if (bsp) bsp.renderLeafs(rasterizer);
-	renderTest();
+
 	canvas.DrawCoursor();
 	canvas.Redraw();
 
@@ -248,11 +238,10 @@ function LoadMap() {
     input.onchange = e => { 
        const file = e.target.files[0];
   	   const reader = new FileReader();	   
-	   console.log(file.name);  
+	   
 	   reader.onload = function() {
             const text = reader.result;
-		//	document.getElementById("").value = text;
-                rasterizer.FlushPrimitives();
+            rasterizer.FlushPrimitives();
           
 			m_map_compiler= new MapCompiler();
             m_map_compiler.CompileFromString(text,compiler_options);
@@ -270,6 +259,7 @@ function LoadMap() {
 			
 			if (m_map_compiler.bsp) {
                 rasterizer.SetBSP(m_map_compiler.bsp) ;
+			
 			}
 
 
@@ -295,8 +285,6 @@ function InitTest() {
   {
 	target_portal=new Portal(verts);
 	verts=verts.reverse();
-
-    DebugOut(test_pos.x+" "+test_pos.y+" "+test_pos.y+"\n ")
 	for (let v of verts) {v.z*=-1;v=v.add(test_pos);}
        source_portal=new Portal(verts);
   }
@@ -496,7 +484,7 @@ let v0=new Array(new Vector3(0,0,0),new Vector3(10,0,0),new Vector3(10,10,0));
  			    compiler_options &=~COMPILER_BUILD_PVS;
 			
 			} else {document.getElementById('vis_checkbox').disabled =false; compiler_options |=COMPILER_CSG;}
-           DebugOut("> "+compiler_options+"\n");
+           
          })
 	}
 

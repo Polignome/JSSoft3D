@@ -1,5 +1,8 @@
 
 
+const USE_AXIS_SORT_AND_VECTOR_SNAP = true;
+
+
 globalThis.assert = (()=> {
     class AssertionError extends Error {
       constructor(message) {

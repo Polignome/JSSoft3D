@@ -25,6 +25,17 @@ class CSGNode
       return depth;
     }
 
+    classifyPlane(normal, epsilon = 0.001) {
+      const ax = Math.abs(normal.x);
+      const ay = Math.abs(normal.y);
+      const az = Math.abs(normal.z);
+
+      if (ax > 1 - epsilon && ay < epsilon && az < epsilon) return 0; // X
+      if (ay > 1 - epsilon && ax < epsilon && az < epsilon) return 1; // Y
+      if (az > 1 - epsilon && ax < epsilon && ay < epsilon) return 2; // Z
+
+      return 3; // schräg
+   }
 
     BuildUnion(planes, index)
     {
@@ -101,16 +112,17 @@ class CSGNode
 
 class CSGTree {
 
+
       constructor(planes) {
         this._root=null;
         if (planes != null) this.Build(planes);
       }
 
-
+  
       Build(planes) {
         if (planes===null) return;
-        
-          this._root=new CSGNode(planes);
+          
+        this._root=new CSGNode(planes);
       }
       
       ClipUnion(pl,strong) {
@@ -135,8 +147,6 @@ class CSG {
              a.clip( b, false);
              b.clip( a, true);
           } 
-        
-       }
-   }
-
+      }
+    }
 }

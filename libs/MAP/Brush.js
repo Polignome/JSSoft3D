@@ -26,6 +26,9 @@ class BrusFace {
 
     }
 
+    snap(v, eps = 0.001) {
+      return Math.abs(v) < eps ? 0 : Math.round(v / eps) * eps;
+   }
 
     SplitByPlane(plane) 
      {
@@ -65,6 +68,9 @@ class BrusFace {
            var  v = new Vector3(v0.x + (scaled * (v1.x - v0.x)),
                                 v0.y + (scaled * (v1.y - v0.y)),
                                 v0.z + (scaled * (v1.z - v0.z)));
+             
+          if (USE_AXIS_SORT_AND_VECTOR_SNAP) v.snap();                                
+          
            fpoly.push(new Vector3(v));
            bpoly.push(new Vector3(v));
          }
@@ -156,9 +162,22 @@ class Brush {
     }
 
 
-    
+     classifyPlane(normal, epsilon = 0.001) 
+      {
+        const ax = Math.abs(normal.x);
+        const ay = Math.abs(normal.y);
+        const az = Math.abs(normal.z);
 
-BuildFaces(keep=1) {
+        if (ax > 1 - epsilon && ay < epsilon && az < epsilon) return 0; // X
+        if (ay > 1 - epsilon && ax < epsilon && az < epsilon) return 1; // Y
+        if (az > 1 - epsilon && ax < epsilon && ay < epsilon) return 2; // Z
+
+        return 3; // schräg
+     }
+
+
+
+     BuildFaces(keep=1) {
       
       for (let f of this.face_list) 
       {
@@ -181,10 +200,21 @@ BuildFaces(keep=1) {
       let planes= new Array();
       this.primitives= new  Array();
   
+      if (USE_AXIS_SORT_AND_VECTOR_SNAP) this.face_list.sort((a, b) => 
+      {
+          let ca = this.classifyPlane(a.plane.normal);
+          let cb = this.classifyPlane(b.plane.normal);
+
+          return ca !== cb  ? ca - cb 
+                 : Math.abs(b.plane.normal.x + b.plane.normal.y + b.plane.normal.z) 
+                 - Math.abs(a.plane.normal.x + a.plane.normal.y + a.plane.normal.z);
+       });
+
+
+
       for (let f of this.face_list) {
         let verts= new Array();
         for (let v of f.verts) verts.push(new Vert(v));
-        
         this._aabb.Add(verts)
         let p=new Polygon(verts,true,0.1);
         p._texture=global_texture_manager.GetTextureByName(f.texture_name);
@@ -192,10 +222,12 @@ BuildFaces(keep=1) {
         p.calcPlane();
         p.setWorldTexture(0.01,0.01);
         this.primitives.push(p);
-        
         planes.push(p.plane);
       }
-      
+     
+
+
+
       this.cgs_tree=new CSGTree(planes);
     }
 

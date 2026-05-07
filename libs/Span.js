@@ -194,7 +194,7 @@ class Span {
         
         
         if (texture===null) {
-            let clear_color=RGB(1,0,0);
+            let clear_color=RGB(255,100,100);
             for (; start < this.end; start++) {
              rasterizer.GetActiveZBuffer()[span]=w;
              rasterizer.GetActiveBuffer()[span]=clear_color;

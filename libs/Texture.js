@@ -108,7 +108,7 @@ class Texture {
 class TextureManager {
   constructor() {
     this._textures= new Array();
-    this._dummy=new Texture(true);
+    this._dummy=new Texture(null);
   }
   
   TextureInManager(name) {

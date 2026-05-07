@@ -18,7 +18,8 @@ const ROOT_OWNER =0
 const BACK_OWNER =-1
 
 
-
+const CONTENTS_SOLID = 1;
+const CONTENTS_EMPTY = 0;
 
 class BSPNode {
 
@@ -34,6 +35,10 @@ class BSPNode {
             }
         }           
     }
+
+    static IsSolid(polygons) {
+    return polygons.length === 0;
+}
 
     constructor(tree,parent,polygons,makesolid=false) {
         this._front=null;
@@ -51,6 +56,8 @@ class BSPNode {
         this._node_id=-1;
         this._owner=ROOT_OWNER;
         this._leaf_id=-1;
+        this._contents=-1;
+        this.finde = this.Finde_besten_Splitter2;
 
         if (parent==null) this._node_type=BSP_ROOD;
 
@@ -81,6 +88,7 @@ class BSPNode {
               this._leaf=parent._leaf;
               this.Makesolid(tree,polygons,this);
            }
+
            return;
         }
         
@@ -100,6 +108,8 @@ class BSPNode {
            if (result === BACK)     {back_polygons.push(p); continue;}             
            if (result === SPANNING) {
                let s=p.SplitPolyByPlane(this._plane);
+//               for (let v of s[0].verts) v.world.snap();
+//               for (let v of s[1].verts) v.world.snap();
                if (s[0] && s[0].verts.length>2)front_polygons.push(s[0]);
                if (s[1] && s[1].verts.length>2)back_polygons.push(s[1]);
                continue;
@@ -373,8 +383,26 @@ class BSPNode {
      
         }
       
+ AxisScore(normal) {
+    const ax = Math.abs(normal.x);
+    const ay = Math.abs(normal.y);
+    const az = Math.abs(normal.z);
 
-   Finde_besten_Splitter(polyliste ,gewichtung = 18) 
+    // wie stark ist die größte Komponente?
+    const max = Math.max(ax, ay, az);
+
+    // 1.0 = perfekt achsenaligned
+    return max;
+}
+
+
+Finde_besten_Splitter(polyliste ,gewichtung = 18) 
+{
+  return this.finde(polyliste ,gewichtung);
+}
+
+
+Finde_besten_Splitter1(polyliste ,gewichtung = 18) 
 {
   
    
@@ -406,7 +434,18 @@ class BSPNode {
      
        }
      
-      let ulScore = Math.abs(lFront + lBack) + (lSplits * gewichtung);
+       let ulScore =0;
+      if (USE_AXIS_SORT_AND_VECTOR_SNAP)
+      {
+         const axis = this.AxisScore(pSplitter.plane.normal);
+         const axisPenalty = (1.0 - axis) * 50; // Tuning-Wert!
+         ulScore = Math.abs(lFront + lBack)  + (lSplits * gewichtung) + axisPenalty;
+
+      } else ulScore = Math.abs(lFront + lBack) + (lSplits * gewichtung); 
+
+
+   
+      
         
        
         if (!(((lFront > 0) && (lBack > 0)) || (lSplits > 0))) continue;
@@ -423,6 +462,187 @@ class BSPNode {
     if (!blnSplitter_gefunden) return -1;
     return best_index;
 }
+
+
+Finde_besten_Splitter2(polyliste, gewichtung = 18)
+{
+    let best_index = -1;
+    let best_score = Number.MAX_VALUE;
+
+    //
+    // ------------------------------------------------------------
+    // PHASE 1
+    // Kandidaten vorsortieren (billige Heuristik)
+    // ------------------------------------------------------------
+    //
+
+    const kandidaten = [];
+
+    for (let i = 0; i < polyliste.length; i++)
+    {
+        const p = polyliste[i];
+
+        if (p._was_best_splitter) continue;
+        if (p._can_not_be_splitter) continue;
+        if (p._create_from_aabb) continue;
+
+        //
+        // Achsenbevorzugung
+        // (Wände/Böden meist besser als schräge Flächen)
+        //
+        const axisScore = this.AxisScore(p.plane.normal);
+
+        //
+        // Optional:
+        // Große Polygone bevorzugen
+        //
+        const areaScore = p.area || 1.0;
+
+        //
+        // Billiger Heuristik-Wert
+        // Höher = interessanter Kandidat
+        //
+        const heuristic =
+            (axisScore * 10.0) +
+            areaScore;
+
+        kandidaten.push({
+            index: i,
+            heuristic: heuristic
+        });
+    }
+
+    //
+    // Beste Kandidaten zuerst
+    //
+    kandidaten.sort((a, b) =>
+        b.heuristic - a.heuristic
+    );
+
+    //
+    // ------------------------------------------------------------
+    // PHASE 2
+    // Nur einen Teil der Kandidaten exakt testen
+    // ------------------------------------------------------------
+    //
+
+    //
+    // z.B. maximal 32 Kandidaten testen
+    //
+    //const maxTests =  Math.min(32, kandidaten.length);
+     
+    const maxTests = kandidaten.length;
+    
+    
+    for (let k = 0; k < maxTests; k++)
+    {
+        const i = kandidaten[k].index;
+
+        const pSplitter = polyliste[i];
+
+        let lFront  = 0;
+        let lBack   = 0;
+        let lPlanar = 0;
+        let lSplits = 0;
+
+        //
+        // --------------------------------------------------------
+        // Exakte Bewertung
+        // --------------------------------------------------------
+        //
+        let aborted = false;
+        for (let j = 0; j < polyliste.length; j++)
+        {
+            if (i === j) continue;
+
+            const pAkt_Poly = polyliste[j];
+
+            if (pAkt_Poly._can_not_be_splitter)
+                continue;
+
+            //
+            // Polygon klassifizieren
+            //
+            const nKlasse =
+                pSplitter.plane.Classify(pAkt_Poly);
+
+            if (nKlasse === FRONT)
+            {
+                lFront++;
+            }
+            else
+            if (nKlasse === BACK)
+            {
+                lBack++;
+            }
+            else
+            if (nKlasse === PLANAR)
+            {
+                lPlanar++;
+            }
+            else
+            {
+                lSplits++;
+            }
+
+            //
+            // ----------------------------------------------------
+            // EARLY OUT
+            //
+            // Sobald Kandidat schlechter wird:
+            // sofort abbrechen
+            // ----------------------------------------------------
+            //
+
+            const currentScore =
+                Math.abs(lFront - lBack) +
+                (lSplits * gewichtung);
+
+            if (currentScore > best_score)
+            {
+                  aborted = true;
+                break;
+
+            }
+        }
+if (aborted)
+    continue;
+        //
+        // Splitter muss wirklich trennen
+        //
+        if (!(((lFront > 0) && (lBack > 0)) ||
+              (lSplits > 0)))
+        {
+            continue;
+        }
+
+        //
+        // Finale Bewertung
+        //
+        const axis =
+            this.AxisScore(pSplitter.plane.normal);
+
+        const axisPenalty =
+            (1.0 - axis) * 50.0;
+
+        const finalScore =
+            Math.abs(lFront - lBack) +
+            (lSplits * gewichtung) +
+            axisPenalty;
+
+        //
+        // Bester Kandidat?
+        //
+        if (finalScore < best_score)
+        {
+            best_score = finalScore;
+            best_index = i;
+        }
+    }
+
+    return best_index;
+}
+
 
 }
 

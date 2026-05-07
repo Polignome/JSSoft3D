@@ -29,9 +29,7 @@ class MapCompiler {
        var debug=DebugOut;
        
        if (options | COMPILER_DEBUG_MODE)  
-
        {
-
           debug("Parse Map...........................: ");
           var mapparser= new MAPParser();
           this.map =mapparser.LoadMapFromString(map_string);
@@ -46,15 +44,13 @@ class MapCompiler {
                count+=b.primitives.length;
             }
           debug("    |- Num Polygons..:"+count+"\n");
-
           }
         }
 
         if (!(options & COMPILER_CSG)) return COMPILER_NO_ERRORS;
-
         {
 
-          debug("CSG.................................: ");
+         debug("CSG.................................: ");
          CSG.union(this.brush_list)
          this.polylist= new Array();
          for (let b of this.brush_list) 
@@ -76,16 +72,33 @@ class MapCompiler {
         {
           debug("Remove no visible Polygons..........: ");
           var aabb= new AABB(this.polylist);
-          var polylist2=aabb.BuildPolygons(100);
+          var polylist2=aabb.BuildPolygons(50);
           var polys_in=this.polylist.length; 
-          for (let p of polylist2) this.polylist.push(p);
+          for (let p of polylist2) {
+                   p._texture=global_texture_manager.GetTextureByName("doof");
+                   p.render_type=POLY_PERSPECTIVE_TEXTURED;
+                   p.calcPlane();
+                   p.setWorldTexture(0.01,0.01);
+            this.polylist.push(p);
+          }
           this.bsp=new BSPTree(this.polylist);
           this.bsp.BuildPortals();
           NonVisPolygonsRemover.Remove(this.bsp);
           this.polylist=this.bsp.ExtractPrims();
           var polys_out=this.polylist.length;
           this.polygons=this.bsp.ExtractPrims();
-          if (this.polygons.length<=0) {debug("...Error\n"); return COMPILER_REMOVE_ERROR;}
+
+  
+
+          if (this.polygons.length<=0) 
+          {
+              debug("...Error\n\n"); 
+              debug("    |- Num Leafs.....:"+this.bsp._leaf_list.length+"\n");
+              debug("    |- Polys in......:"+polys_in+"\n");
+              debug("    |- Polys out.....:"+polys_out+"\n");
+             
+              return COMPILER_REMOVE_ERROR;
+          }
           debug("...Ok\n");
           debug("    |- Num Leafs.....:"+this.bsp._leaf_list.length+"\n");
           debug("    |- Polys in......:"+polys_in+"\n");

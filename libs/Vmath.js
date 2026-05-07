@@ -578,7 +578,16 @@ class Vector3 extends Matrix {
 
 
   }
-   swap(swap_axis="")
+ 
+  snap( eps = 0.01) {
+    
+      this.x= Math.abs(this.x) < eps ? 0 : Math.round(this.x / eps) * eps;
+      this.y= Math.abs(this.y) < eps ? 0 : Math.round(this.y / eps) * eps;
+      this.z= Math.abs(this.z) < eps ? 0 : Math.round(this.z / eps) * eps;
+  }
+
+ 
+  swap(swap_axis="")
   {
        if (swap_axis=="xy" || swap_axis=="yx") {
            let t=this.y;
