@@ -152,6 +152,115 @@ class Brush {
        this._aabb= new AABB();
     }
 
+
+     mergeVerts(polyA, polyB, epsilon = 1e-6) {
+
+     
+    // --- 2. Shared edge finden ---
+    let aIndex = -1;
+    let bIndex = -1;
+
+    for (let i = 0; i < polyA.length; i++) {
+        const a0 = polyA[i];
+        const a1 = polyA[(i + 1) % polyA.length];
+
+        for (let j = 0; j < polyB.length; j++) {
+            const b0 = polyB[j];
+            const b1 = polyB[(j + 1) % polyB.length];
+
+            // entgegengesetzte Edge!
+            if (a0.Equal(b1,epsilon) && a1.Equal(b0,epsilon)) {
+                aIndex = i;
+                bIndex = j;
+                break;
+            }
+        }
+        if (aIndex !== -1) break;
+    }
+
+    if (aIndex === -1) return null;
+
+    // --- 3. Merge (Shared Edge wird ausgelassen) ---
+    const result = [];
+
+    // Polygon A (ohne shared edge)
+    let i = (aIndex + 1) % polyA.length;
+    while (i !== aIndex) {
+        result.push(polyA[i]);
+        i = (i + 1) % polyA.length;
+    }
+
+    // Polygon B (ohne shared edge)
+    let j = (bIndex + 1) % polyB.length;
+    while (j !== bIndex) {
+        result.push(polyB[j]);
+        j = (j + 1) % polyB.length;
+    }
+
+    // --- 4. Duplicate Vertices entfernen ---
+    const deduped = [];
+    for (let v of result) {
+        if (!deduped.some(d => d.Equal(v,epsilon))) {
+            deduped.push(v);
+        }
+    }
+
+    // --- 5. Kollineare Punkte entfernen ---
+    const cleaned = [];
+    for (let k = 0; k < deduped.length; k++) {
+
+        const prev = deduped[(k - 1 + deduped.length) % deduped.length];
+        const curr = deduped[k];
+        const next = deduped[(k + 1) % deduped.length];
+
+        const v1 = curr.sub( prev);
+        const v2 = next.sub( curr);
+
+        const c = v1.cross(v2);
+        const lenSq = c.dot(c);
+
+        if (lenSq > epsilon * epsilon) {
+            cleaned.push(curr);
+        }
+    }
+
+    if (cleaned.length < 3) return null;
+
+    return cleaned;
+}
+
+
+
+    MergePolygons(fragment_list,fragment)
+    {
+       if (fragment_list.length<=0) {
+        fragment_list.push(fragment);
+        return false;
+       }
+
+       for (let i=0;i<fragment_list.length;i++) {
+           let f=this.mergeVerts(fragment_list[i],fragment);
+           if (f) {
+            console.log("Coneckt\n")
+            fragment_list[i]=f; 
+            return true;
+          }
+       }
+        fragment_list.push(fragment);
+        return false;
+    }
+
+    RebuildFaces() {
+        
+       let temp=new Array();
+       for (let i=0;i<this.face_list.length;i++)temp.push(new Array())
+
+        for (let p of this.primitives )
+        {
+          console.log(p._id)
+          this.MergePolygons(temp[p._id],p);  
+        }
+    }
     
     get faces() {return this.face_list;}
     set faces(a) {this.face_list=a;}
@@ -178,11 +287,9 @@ class Brush {
 
 
      BuildFaces(keep=1) {
-      
       for (let f of this.face_list) 
       {
           f.CreateByPlane();
-          
           for (let f2 of this.face_list) {
              if (f2==f) continue;
              if (f2.plane.Classify(f.verts) === SPANNING)   {
@@ -211,7 +318,7 @@ class Brush {
        });
 
 
-
+      let id=0;
       for (let f of this.face_list) {
         let verts= new Array();
         for (let v of f.verts) verts.push(new Vert(v));
@@ -221,6 +328,8 @@ class Brush {
         p.render_type=POLY_PERSPECTIVE_TEXTURED;
         p.calcPlane();
         p.setWorldTexture(0.01,0.01);
+        p._id=id;
+        id++;
         this.primitives.push(p);
         planes.push(p.plane);
       }

@@ -17,6 +17,9 @@ const PARSER_TEXTINFO_4_ERROR = -12
 const PARSER_TEXTINFO_5_ERROR = -13
 const PARSER_ILLEGAL_BRUSH_ERROR = -14
 
+
+
+
 function rgbToGray(r,g,b) {
     return 0.299 * r + 0.587 * g + 0.114 * b;
 }
@@ -173,7 +176,6 @@ class Map {
         this.map_entrys.push(entry)
 
     }
-
    GetBrushList() {
         const brush_list=[];
 
@@ -249,7 +251,13 @@ class MAPParser {
         this.string_index=0;
         this.depth=0;  // depth of {}
         this.map = new Map;
-     } 
+        this.error_stack= new Array();
+
+    } 
+    AddError(text) {
+        DebugOut(text+"\n")
+        this.error_stack.push(text);
+    } 
  
  
 DebugOut() {
@@ -276,7 +284,6 @@ DebugOut() {
         var line_comment=false;
         var multi_line_comment=false;
         var parm='';
-        console.clear();
         this.line_index=0;
         this.string_index=0;
         this.depth=0;
@@ -295,7 +302,10 @@ DebugOut() {
             if (cc=="/*" && !line_comment && !multi_line_comment)  multi_line_comment= true;
             if (cc=="*/" && !line_comment) 
             {
-                if (! multi_line_comment)  return PARSER_MULTI_LINE_COMMENT_ERROR;
+                if (! multi_line_comment) {
+                    this.AddError ("Comment Error ");
+                    return PARSER_MULTI_LINE_COMMENT_ERROR;
+                } 
                     multi_line_comment=false;
                     i++;
                  continue;
@@ -329,7 +339,10 @@ DebugOut() {
        
         if (ss.length>0) line.push(ss);
         if (line.length>0 ) this.strings_lines.push(line);
-        if (parm!='') return PARSER_PARAMETER_ERROR;
+        if (parm!='')  {
+            this.AddError ("PARSER_PARAMETER_ERROR ");
+            return PARSER_PARAMETER_ERROR;
+        }
          
       
       
@@ -419,36 +432,49 @@ isTruble(ss) {
 
 ParseBrush(c,entry) {
     let ss=c;
-    if (ss!="{") return PARSER_SYNTAX_ERROR;
-    if (entry==null) return PARSER_SYNTAX_ERROR;
+    if (ss!="{")  {
+        this.AddError ("PARSER_SYNTAX_ERROR '{' missing "+this.line_index);
+
+        return PARSER_SYNTAX_ERROR;
+    }
+    if (entry==null) {
+        this.AddError ("PARSER_SYNTAX_ERROR entry==null "+this.line_index);
+     
+        return PARSER_SYNTAX_ERROR;
+    }
 
     let brush= new Brush();
     while (ss!="")   {
         ss = this.GetString();
       
         if (ss=="}") {
-            if (brush.face_list.length<5) return PARSER_ILLEGAL_BRUSH_ERROR;
+            if (brush.face_list.length<5) {
+               this.AddError ("PARSER_ILLEGAL_BRUSH_ERROR brush.face_list.length= "+brush.face_list.length+"Line "+this.line_index);
+                return PARSER_ILLEGAL_BRUSH_ERROR;
+            }
             brush.BuildFaces();
             entry.AddBrush(brush);
             return PARSER_NO_ERRORS;
         } 
         if (ss.charAt(0)=='(') 
         {
-          var face1=this.isTrible(ss);                 if (face1==null) return PARSER_FACE_V1_ERROR;
-          var face2=this.isTrible(this.GetString());   if (face2==null) return PARSER_FACE_V1_ERROR;
-          var face3=this.isTrible(this.GetString());   if (face3==null) return PARSER_FACE_V1_ERROR;
+          var face1=this.isTrible(ss);                 if (face1==null) {this.AddError ("PARSER_FACE_V1_ERROR "+this.line_index);return PARSER_FACE_V1_ERROR;}
+          var face2=this.isTrible(this.GetString());   if (face2==null) {this.AddError ("PARSER_FACE_V1_ERROR "+this.line_index);return PARSER_FACE_V1_ERROR;}
+          var face3=this.isTrible(this.GetString());   if (face3==null) {this.AddError ("PARSER_FACE_V1_ERROR "+this.line_index);return PARSER_FACE_V1_ERROR;}
         
-          var tex_name=this.GetString();          if (tex_name=="") return PARSER_FACE_V1_ERROR;
+          var tex_name=this.GetString();          if (tex_name=="") {this.AddError ("PARSER_FACE_V1_ERROR "+this.line_index);return PARSER_FACE_V1_ERROR;}
         
-          var tex_info_1=this.isTruble(this.GetString());  if (tex_info_1==null) return PARSER_TEXTINFO_1_ERROR;
-          var tex_info_2=this.isTruble(this.GetString());  if (tex_info_2==null) return PARSER_TEXTINFO_2_ERROR;
+          var tex_info_1=this.isTruble(this.GetString());  if (tex_info_1==null) {this.AddError ("PARSER_TEXTINFO_1_ERROR "+this.line_index);return PARSER_TEXTINFO_1_ERROR;}
+          var tex_info_2=this.isTruble(this.GetString());  if (tex_info_2==null) {this.AddError ("PARSER_TEXTINFO_1_ERROR "+this.line_index);return PARSER_TEXTINFO_1_ERROR;}
+          
         
-          var tex_rot     =parseFloat(this.GetString()); if (tex_rot==NaN) return PARSER_TEXTINFO_3_ERROR;
-          var tex_scale_u =parseFloat(this.GetString()); if (tex_scale_u==NaN) return PARSER_TEXTINFO_4_ERROR;
-          var tex_scale_v =parseFloat(this.GetString()); if (tex_scale_v==NaN) return PARSER_TEXTINFO_5_ERROR;
+          var tex_rot     =parseFloat(this.GetString()); if (tex_rot==NaN) {this.AddError ("ARSER_TEXTINFO_3_ERROR "+this.line_index);return ARSER_TEXTINFO_3_ERROR;}
+          var tex_scale_u =parseFloat(this.GetString()); if (tex_scale_u==NaN) {this.AddError ("ARSER_TEXTINFO_4_ERROR "+this.line_index);return ARSER_TEXTINFO_4_ERROR;}
+          var tex_scale_v =parseFloat(this.GetString()); if (tex_scale_v==NaN) {this.AddError ("ARSER_TEXTINFO_5_ERROR "+this.line_index);return ARSER_TEXTINFO_5_ERROR;}
           brush.AddFace(new BrusFace(face1,face2,face3,tex_name,tex_info_1,tex_info_2,new Vector3(tex_rot,tex_scale_u,tex_scale_v),"yz"));     
         continue;
        } 
+       this.AddError ("PARSER_SYNTAX_ERROR "+this.line_index);
      return PARSER_SYNTAX_ERROR;
     }
 
@@ -459,7 +485,10 @@ ParseBrush(c,entry) {
 ParseEntry(c)
 {
     let ss=c;
-    if (ss!="{") return PARSER_SYNTAX_ERROR;
+    if (ss!="{") {
+     this.AddError ("PARSER_SYNTAX_ERROR missing '{' "+this.line_index);
+        return PARSER_SYNTAX_ERROR;
+    }
     const entry= new MAPEntry();
     
 
@@ -494,6 +523,7 @@ ParseEntry(c)
 
 
     }
+     this.AddError ("PARSER_SYNTAX_ERROR "+this.line_index);
     
     return PARSER_SYNTAX_ERROR;
     
@@ -506,7 +536,10 @@ ParseMap() {
      
     while (ss!="")  
     {
-        if (ss!="{") return PARSER_SYNTAX_ERROR;
+        if (ss!="{") {
+            this.AddError ("PARSER_SYNTAX_ERROR missing '{' "+this.line_index);   
+            return PARSER_SYNTAX_ERROR;
+        }
         let err=this.ParseEntry(ss);
         if (err!=PARSER_NO_ERRORS) return err;
         ss=this.GetString();  

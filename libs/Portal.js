@@ -376,8 +376,9 @@ class NonVisPolygonsRemover {
 
     if (leaf._checked) return;
         leaf._checked=true;
+        leaf._inside=false;
     
-      leaf.DeletePrimitivs();
+      //leaf.DeletePrimitivs();
       for (let p of leaf._portals)
       {
         this.StepLeafs(p._leaf1);

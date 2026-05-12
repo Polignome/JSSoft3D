@@ -84,9 +84,13 @@ class MapCompiler {
           this.bsp=new BSPTree(this.polylist);
           this.bsp.BuildPortals();
           NonVisPolygonsRemover.Remove(this.bsp);
-          
-          var polys_out=this.bsp.ExtractPrims().length;
-          if (polys_out<=0) 
+          this.polylist=this.bsp.ExtractPrims();
+          var polys_out=this.polylist.length;
+          this.polygons=this.bsp.ExtractPrims();
+
+  
+
+          if (this.polygons.length<=0) 
           {
               debug("...Error\n\n"); 
               debug("    |- Num Leafs.....:"+this.bsp._leaf_list.length+"\n");
@@ -100,7 +104,7 @@ class MapCompiler {
           debug("    |- Polys in......:"+polys_in+"\n");
           debug("    |- Polys out.....:"+polys_out+"\n");
         }
-/*
+
         if (!(options & COMPILER_FINAL_BSP)) return COMPILER_NO_ERRORS;
         {
           debug("Build final BSP.....................: ");
@@ -118,7 +122,7 @@ class MapCompiler {
           debug("...Ok\n");
           debug("    |- Num Portals...:"+this.bsp._portal_list.length+"\n");
         } 
-*/
+
 
         return COMPILER_NO_ERRORS;
     }

@@ -51,6 +51,7 @@ const MOUSE_BUTTON_LEFT = 1<<1;
 const MOUSE_BUTTON_MIDDLE = 1<<2;
 const MOUSE_BUTTON_RIGHT = 1<<3
 var bsp=null;
+var m_wad3=null;
 
 
 //////////////////////////////////////////////////////////////
@@ -99,6 +100,20 @@ function Render() {
 }
 
 
+async function loadWadFromURL(url) {
+
+    const response = await fetch(url);
+
+    if (!response.ok) {
+        throw new Error("WAD konnte nicht geladen werden");
+    }
+
+    const buffer = await response.arrayBuffer();
+
+    return new Wad3File(buffer);
+}
+
+
 function UpdateKeys() {
 	
 	
@@ -111,11 +126,7 @@ let s=10;
      if (keys[(37)])test_pos.y-=s;
      if (keys[(12)])test_pos.z-=s;
      if (keys[(39)])test_pos.y+=s;
-
-     //if (keys[(35)])test_pos.z+=s;
-     //if (keys[(40)])test_pos.z-=s;
-     //if (keys[(34)])test_pos.z-=s;
-
+  
 
 	if (keys[(90)]) {m_render_zbuffer=true;}
 	if (keys[(85)]) {m_render_zbuffer=false;}
@@ -172,26 +183,9 @@ function Update() {
 }
 
 
-function renderTest() {
-    if (source_portal) {
-	let p0= new Polygon(source_portal.verts);
-	rasterizer.DrawPolyLined2(p0,new Vector3(0,1,0));
-
-	}
-    if (target_portal) {
-	let p1= new Polygon(target_portal.verts);
-	rasterizer.DrawPolyLined2(p1,new Vector3(1,0,0));
-
-	}
-
-	for (let p of test_ports) rasterizer.DrawPolyLined2(p,new Vector3(1,0,1));
-	
-
-}
 
 function GameLoop() {
   
-InitTest();	
 	Update();
 	rasterizer.Start(cam);
 	Render();
@@ -231,8 +225,23 @@ function readBytes(path) {
     return buffer; // rohe Bytes
 }
 
+async function loadWad(url) {
+    const response = await fetch(url);
+    const buffer = await response.arrayBuffer();
+
+    return new Wad3File(buffer);
+}
+
+
+
+
 function LoadMap() {
-	
+	   if (m_wad3) {
+	for (let e of m_wad3.entries) {
+		console.log(e.name)
+	}
+   }
+
 	var input = document.createElement('input');
     input.type = 'file';
     input.onchange = e => { 
@@ -262,9 +271,10 @@ function LoadMap() {
 			
 			}
 
-
+               
 			
 		};
+		console.log("---> ",file);
        reader.readAsText(file);  
 	}
 
@@ -272,36 +282,43 @@ function LoadMap() {
 }
 
 
-function InitTest() {
-	let verts=[];
+function loadWadFromFile(file) {
 
+    return new Promise((resolve, reject) => {
 
+        const reader = new FileReader();
 
-	verts.push(new Vector3(-10,-10,10));
-	verts.push(new Vector3( 10,-10,10));
-	verts.push(new Vector3( 10, 10,10));
-	verts.push(new Vector3(-10, 10,10));
+        reader.onload = () => {
+            try {
+                m_wad3 = new Wad3File(reader.result);
+                resolve(m_wad3);
+            }
+            catch (err) {
+                reject(err);
+            }
+        };
+
+        reader.onerror = () => {
+            reject(reader.error);
+        };
+
+        reader.readAsArrayBuffer(file);
+    });
+}
+
+function LoadWad() {
+	
+	var input = document.createElement('input');
+    input.type = 'file';
+    input.onchange = e => { 
+       loadWadFromFile(e.target.files[0]);
+	}
+   input.click();
    
-  {
-	target_portal=new Portal(verts);
-	verts=verts.reverse();
-	for (let v of verts) {v.z*=-1;v=v.add(test_pos);}
-       source_portal=new Portal(verts);
-  }
-
-
-
-     let ap=AntiPenumbra.Build(source_portal,target_portal);
-	 let polys=ap.BuildPolygons();
-	 for (let pp of polys) {
-		//DebugOut(pp.toStr()+"\n");
-	 }
-test_ports=polys;
-//	 rasterizer.AddPrimitive(polys);
-    //rasterizer.BuildBVH();
-
 
 }
+
+
 
 
 function SaveHelp(x,y) {
@@ -330,7 +347,7 @@ ClearDebugOut();
 
 let v0=new Array(new Vector3(0,0,0),new Vector3(10,0,0),new Vector3(10,10,0));
 
-    
+  
 
 
 

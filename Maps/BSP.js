@@ -57,7 +57,6 @@ class BSPNode {
         this._owner=ROOT_OWNER;
         this._leaf_id=-1;
         this._contents=-1;
-        this._inside=true;
         this.finde = this.Finde_besten_Splitter2;
 
         if (parent==null) this._node_type=BSP_ROOD;
@@ -151,8 +150,7 @@ class BSPNode {
 
 
     ExtractPrims(out,reset_attribs=true) {
-       if (!this._inside) return;
-        if (this.isLeaf())  
+       if (this.isLeaf())  
              for (let p of this._polygons) {
                 let pp=new Polygon(p);
                 if (reset_attribs) pp._was_best_splitter=false;
@@ -163,8 +161,7 @@ class BSPNode {
       } 
 
       ExtractPortals(out,reset_attribs=true) {
-       
-        if (this.isLeaf())  
+       if (this.isLeaf())  
              for (let p of this._portals) {
                 if (reset_attribs) p._checked=false;
                 out.push(p);
@@ -176,7 +173,7 @@ class BSPNode {
     render(engine,camera_position,frustum,xform)
      {
      
-       if (!this._inside) return;
+       
 
        if (engine._use_node_frustum_culling) 
         {

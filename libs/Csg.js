@@ -148,5 +148,8 @@ class CSG {
              b.clip( a, true);
           } 
       }
+       for (let i of brush_list) i.RebuildFaces();
+
+
     }
 }
