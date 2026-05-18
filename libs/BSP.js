@@ -221,18 +221,25 @@ class BSPNode {
     {
           for (let p of this._polygons)  
           {
-                
+            
              if (p.plane.Classify(camera_position) == BACK) {
                 engine._primitives_back_face_culling++;
                 continue;
              }
-             let result = p.ClipByFrustum(frustum);
+/*    
+              let result = p.ClipByFrustum(frustum);
              if (result[1] < 0 || result[0] === undefined || result[0].verts.length < 3) {
                 engine._primitives_frustum_culling++;
                 continue;
              }
              
              let clipped = result[0];
+*/
+          let clipped = engine._BeamTree.renderPolygon(p);
+         if (!clipped) continue;
+
+
+             
              let o = clipped.TransformToScreen(xform);
              if (o[0]) {
               engine._primitives_transform_culling++;
