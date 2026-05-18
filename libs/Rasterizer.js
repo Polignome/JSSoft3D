@@ -48,7 +48,7 @@ class Rasterizer {
         this._height=0;
         this._screenCenter_x=this._width/2;
         this._screenCenter_y=this._height/2;
-        
+        this._BeamTree=new BeamTree();
         this._LOESCHEN=0;
 
 
@@ -170,7 +170,7 @@ class Rasterizer {
       this.frustum = new Frustum();
       this.frustum.createByCam(cam);
       this.camera=camera;
-
+        this._BeamTree.ReInit(camera, this.frustum);
 
    }
     get SpansIn()  {return this._spanrenderer._m_spans_in;}
