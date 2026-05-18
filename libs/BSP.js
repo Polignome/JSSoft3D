@@ -187,7 +187,7 @@ class BSPNode {
         }
           // ---- Projection ----
            const bbox = this._aabb.projectAABBToScreen(
-            xform, engine.width, engine.height
+            xform, engine.width(), engine.height()
            );
         
 
