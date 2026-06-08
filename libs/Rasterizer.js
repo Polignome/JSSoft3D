@@ -48,6 +48,17 @@ class Rasterizer {
     this._height = 0;
     this._screenCenter_x = this._width / 2;
     this._screenCenter_y = this._height / 2;
+    this._BeamTree = new BeamTree();
+    this._LOESCHEN = 0;
+
+
+    this._xScale = 1;//0.0198;
+    this._yScale = 1;//0.0170;
+    this._canvas = canvas;
+    this._width = 0;
+    this._height = 0;
+    this._screenCenter_x = this._width / 2;
+    this._screenCenter_y = this._height / 2;
 
     this._LOESCHEN = 0;
 
@@ -102,10 +113,22 @@ class Rasterizer {
     this._use_node_frustum_culling = true;
     this._use_node_hzbuffer_culling = true;
 
-    this._clear_spanbuffer = true;
-    this._use_spanbuffer = true;
-    this.this_help = false;
+    this._hzbuffer.setBaseLevel(this._zbuffer);
+    this._hzbuffer.build();
 
+
+    if (this._use_spanbuffer) {
+      this._spanrenderer.Start();
+    } else {
+      this.ClearZBuffer();
+      this.canvas.Clear();
+    }
+    // WriteToLog(this._zbuffer);
+    this.xform = camera.GetCombinedMatrix();
+    this.frustum = new Frustum();
+    this.frustum.createByCam(cam);
+    this.camera = camera;
+    this._BeamTree.ReInit(camera, this.frustum);
 
     this._canvas.Canvas.addEventListener("resize", (ev) => {
       let { width, height } = ev;
