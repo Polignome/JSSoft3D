@@ -49,6 +49,47 @@ class BrushOCTreeNode extends AABB {
 
 }
 
+
+class PolyOCTreeNode extends AABB {
+    constructor(poly_list, aabb, depth = 0, max_depth = 4, max_obj_in_node = 4) {
+        super(aabb);
+        this.depth = depth;
+        this._poly_list = [];
+        this._nodes = [];
+        this.leaf = false;
+
+
+        for (let poly of poly_list) {
+
+            let aabb = new AABB(poly.verts)
+            if (this.IntersectedByBounds(aabb) || (this.PointInside(aabb.min) && this.PointInside(abb.max))) this._poly_list.push(poly);
+
+        }
+        // console.log("Depth",depth,"Min:",this.min.x,this.min.y,this.min.z,"Max:",this.max.x,this.max.y,this.max.z,"Num ",this._brush_list.length)
+        if (this._poly_list.length <= max_obj_in_node || (depth + 1 > max_depth)) {
+
+            return;
+        }
+
+
+
+
+        let aabb_list = this.subdivide();
+
+        for (let a of aabb_list) {
+            let node = new PolyOCTreeNode(this._poly_list, a, depth + 1, max_depth, max_obj_in_node)
+            if (node._poly_list.length > 0) {
+                this._nodes.push(node);
+            }
+        }
+        if (this._nodes.length > 0) this._poly_list = []; else this.leaf = true;
+    }
+
+}
+
+
+
+
 class BrushOCTree {
     constructor(brush_list) {
         const aabb = new AABB();
@@ -72,3 +113,7 @@ class BrushOCTree {
     }
 
 }
+
+
+
+
