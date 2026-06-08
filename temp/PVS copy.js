@@ -8,152 +8,6 @@ const PORTAL_NOT_VALID = -1;
 
 
 
-class PolygonHull {
-    constructor(poly) {
-
-        this.planes = [];
-        this.plane = new Ray(poly.plane)
-        this.aabb = new AABB(poly)
-        const verts = poly.verts;
-        const normal = poly.plane.normal;
-
-        // 1. Front plane
-        // this.planes.push(poly.plane);
-
-        // 2. Edge planes (SEHR WICHTIG)
-        for (let i = 0; i < verts.length; i++) {
-
-            const v0 = verts[i].world;
-            const v1 = verts[(i + 1) % verts.length].world;
-
-            const edge = v1.sub(v0);
-            const n = edge.cross(normal).normalize();
-            let plane = Ray.CalcPlaneBy3Vectors(v0.add(v1).mul(0.5), v1, v1.add(normal.mul(-10)));
-            //            const plane = Ray.FromPointNormal(v0, n);
-            this.planes.push(plane);
-        }
-    }
-
-
-
-    clipSegmentOutsideHull(seg) {
-        const a = seg[0];
-        const b = seg[1];
-        let split = false;
-        // Segment muss in Polygon-Ebene liegen
-        if (this.plane.Classify(a) !== COPLANAR ||
-            this.plane.Classify(b) !== COPLANAR) {
-            return [seg];
-
-        }
-
-        // Schnittparameter sammeln
-        let params = [0.0, 1.0];
-
-        for (const plane of this.planes) {
-            const d0 = plane.Classify(a);
-            const d1 = plane.Classify(b);
-
-            // echter Seitenwechsel?
-            if (
-                (d0 === FRONT && d1 === BACK) ||
-                (d0 === BACK && d1 === FRONT)
-            ) {
-                const p = plane.SplitLine(a, b);
-
-                const dx = b.x - a.x;
-                const dy = b.y - a.y;
-                const dz = b.z - a.z;
-                split = true;
-                let t;
-
-                if (Math.abs(dx) > Math.abs(dy) &&
-                    Math.abs(dx) > Math.abs(dz)) {
-                    t = (p.x - a.x) / dx;
-                }
-                else if (Math.abs(dy) > Math.abs(dz)) {
-                    t = (p.y - a.y) / dy;
-                }
-                else {
-                    t = (p.z - a.z) / dz;
-                }
-
-                params.push(t);
-            }
-        }
-
-        // sortieren
-        params.sort((a, b) => a - b);
-
-        // Dubletten entfernen
-        const eps = 1e-6;
-        const unique = [];
-
-        for (const t of params) {
-            if (unique.length === 0 ||
-                Math.abs(unique[unique.length - 1] - t) > eps) {
-                unique.push(t);
-            }
-        }
-
-        const result = [];
-        let has_inside = false;
-        // Intervalle testen
-        for (let i = 0; i < unique.length - 1; i++) {
-            const t0 = unique[i];
-            const t1 = unique[i + 1];
-
-            const tm = (t0 + t1) * 0.5;
-
-            const mid = new Vector3(
-                a.x + (b.x - a.x) * tm,
-                a.y + (b.y - a.y) * tm,
-                a.z + (b.z - a.z) * tm
-            );
-
-            let inside = true;
-
-            for (const plane of this.planes) {
-                if (plane.Classify(mid) === BACK) {
-                    inside = false;
-
-                    break;
-                }
-            }
-
-            // nur Außensegmente behalten
-            if (!inside) {
-                const p0 = new Vector3(
-                    a.x + (b.x - a.x) * t0,
-                    a.y + (b.y - a.y) * t0,
-                    a.z + (b.z - a.z) * t0
-                );
-
-                const p1 = new Vector3(
-                    a.x + (b.x - a.x) * t1,
-                    a.y + (b.y - a.y) * t1,
-                    a.z + (b.z - a.z) * t1
-                );
-                split = true;
-                result.push([p0, p1]);
-            }
-        }
-        if (result.length === 0) split = true;
-        return result
-
-
-
-    }
-
-
-    IntersectedByBounds(aabb) {
-        return this.aabb.IntersectedByBounds(aabb);
-    }
-
-}
-
-
-
 class CellPortal {
 
     constructor(owner_cell, verts, look_at_cell = null) {
@@ -166,32 +20,6 @@ class CellPortal {
         this._flags = PORTAL_UNTESTED;
         if (verts) this.AddVerts(verts);
     }
-
-    IsPortalCovered(hulls) {
-        let edge_list = [];
-        for (let i = 0; i < this.verts.length; i++) {
-            let j = (i + 1) % this.verts.length
-            let v0 = this.verts[i];
-            let v1 = this.verts[j];
-            let edge_list = [[v0, v1]];
-
-            let change = true;
-
-            for (let h of hulls) {
-                let next = []
-                for (let e of edge_list) {
-                    let fragmenst = h.clipSegmentOutsideHull(e);
-                    next.push(...fragmenst);
-                }
-                edge_list = next;
-            }
-            if (edge_list.length > 0) return false;
-
-        }
-        return true;
-
-    }
-
 
     Area() {
         if (this.verts.length < 3)
@@ -371,11 +199,6 @@ class Cell {
 
 
 
-
-
-
-
-
 class CellMerger {
 
     constructor(bsp) {
@@ -500,7 +323,10 @@ class CellMerger {
             if (!this.IsThinCell(cell))
                 continue;
 
-
+            console.log(
+                "ThinCell",
+                cell._id
+            );
 
             if (this.MergeThinCell(cell))
                 return true;
@@ -522,7 +348,7 @@ class CellMerger {
         {
             for (let p of portals) {
                 let p1 = new Polygon(p.verts);
-
+                //   if (p._flags != PORTAL_VALID) continue;
                 engine.DrawPolyLined2(p1, new Vector3(1, 1, 0), 20);
             }
         }
@@ -541,7 +367,7 @@ class CellMerger {
             }
         }
 
-        if (start === null) start = this._cells[0];//{return false;}
+        if (start === null) return false;
         start.render(engine, engine.camera.position, frustum, xform);
         let count = 0;
         for (let cell of this._cells) {
@@ -560,27 +386,6 @@ class CellMerger {
             for (let p of polygons) {
             }
             this.renderPortals(engine, l._portals)
-        }
-    }
-    renderSingelCellHull(engine, id, render_ch = true) {
-        if (id < 0 || id >= this._cells.length) return;
-        let l = this._cells[id];
-        let polygons = l.aabb.BuildPolygons();
-        for (let p of polygons) {
-            if (render_ch) p.SetColor(0, 1, 0); else p.SetColor(0, 0, 1);
-            engine.DrawPolyLined(p, new Vector3(0, 1, 1));
-        }
-        this.renderPortals(engine, l._portals)
-        if (!render_ch) return;
-
-        for (let p of l._portals) {
-            let ll = p._look_at_cell;
-            let polygons = ll.aabb.BuildPolygons();
-            for (let p of polygons) {
-                p.SetColor(0, 0, 1);
-                engine.DrawPolyLined(p, new Vector3(0, 1, 1));
-            }
-
         }
     }
 
@@ -638,6 +443,12 @@ class CellMerger {
             if (!mergedVerts)
                 continue;
 
+            console.log(
+                "Merge:",
+                source_cell._id,
+                cellA._id,
+                cellB._id
+            );
 
             //
             // Polygone übernehmen
@@ -663,8 +474,7 @@ class CellMerger {
                     [...mergedVerts].reverse(),
                     source_cell
                 );
-            np0._id = source_portal._id;
-            np1._id = source_portal._brother._id;
+
             np0._brother = np1;
             np1._brother = np0;
 
@@ -792,62 +602,95 @@ class CellMerger {
         return false;
     }
 
-    FindGodPortals() {
-
-
-        for (const p of this._portals) {
-            let aabb = new AABB(p.verts);
-            aabb.scale(0.5);
-            let temp = [];
-            for (let hull of this._temp_polys) if (hull.IntersectedByBounds(aabb)) temp.push(hull);
-
-            if (IsPortalCovered(p, temp)) p._flags = PORTAL_VALID; else p._flags = PORTAL_NOT_VALID;
-
-        }
-
-    }
-
-
-    DebugCells() {
-        for (let cell of this._cells) {
-            console.log("Check cell [", cell._id, "_______________________:");
-            for (let p of cell._portals) {
-                console.log("Portal [", p._id, "] -> ", p._look_at_cell._id);
-            }
-            console.log(" ");
-        }
-
-    }
-
-
 
     Optimize() {
         let changed = true;
         let start = this._cells.length;
-        this.DebugCells();
         while (changed) {
             changed = false;
             if (this.FindMergeCandidate()) changed = true;
             if (this.MergeThinCells()) changed = true;
-        }
-
-        for (let i = 0; i < this._cells.length; i++) {
-            this._cells[i]._id = i;
-            for (let p of this._cells[i]._polygons) p._id = CalcIndex(CELL_INDEX, 0, i);
 
         }
+        console.log("Optimize Step 2  ", "Start ", start, " End ", this._cells.length)
+    }
 
-        console.log("+----------------------------------------------------+");
-        console.log("|                                                    |");
-        console.log("|                                                    |");
-        console.log("|                                                    |");
-        console.log("|                                                    |");
-        console.log("+----------------------------------------------------+");
-        this.DebugCells();
+    ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    //                                                                                                                       //
+    //                                                                                                                       //
+    //                                                                                                                       //
+    ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+
+    isPortalEdgeCoveredByPolygons(p0, p1, hulls) {
+
+        let fragments = [[p0, p1]];
+
+        for (const hull of hulls) {
+
+            let next = [];
+
+            for (const seg of fragments) {
+                const clipped = hull.clipSegmentAgainstHull(seg);
+
+                // WICHTIG:
+                // wir behalten nur RESTFRAGMENTE (nicht entfernte Teile)
+                for (const f of clipped) {
+                    next.push(f);
+                }
+            }
+
+            fragments = next;
+            if (fragments.length === 0) {
+                return true; // komplett entfernt → vollständig bedeckt
+            }
+        }
+
+        return fragments.length === 0;
     }
 
 
+
+    isPortalFullyCovered(portal, polygonHulls) {
+
+        const verts = portal.verts;
+
+        for (let i = 0; i < verts.length; i++) {
+
+            const p0 = verts[i];
+            const p1 = verts[(i + 1) % verts.length];
+            let res = this.isPortalEdgeCoveredByPolygons(p0, p1, polygonHulls);
+
+            if (!res) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+
+    OptimzeValidPortals() {
+        console.log("OptimzeValidPortals________________");
+
+
+        for (let p of this._portals) {
+            if (p._flags != PORTAL_UNTESTED) continue;
+
+
+            if (this.isPortalFullyCovered(p, this._temp_polys)) {
+                p._brother._flags = PORTAL_VALID;
+                p._flags = PORTAL_VALID;
+                console.log("Valid")
+            } else {
+                p._brother._flags = PORTAL_NOT_VALID;
+                p._flags = PORTAL_NOT_VALID;
+                console.log("NOT Valid")
+            }
+
+        }
+
+    }
 
 
     BuildCellList() {

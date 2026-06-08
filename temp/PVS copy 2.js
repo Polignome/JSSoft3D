@@ -13,7 +13,6 @@ class PolygonHull {
 
         this.planes = [];
         this.plane = new Ray(poly.plane)
-        this.aabb = new AABB(poly)
         const verts = poly.verts;
         const normal = poly.plane.normal;
 
@@ -500,7 +499,10 @@ class CellMerger {
             if (!this.IsThinCell(cell))
                 continue;
 
-
+            console.log(
+                "ThinCell",
+                cell._id
+            );
 
             if (this.MergeThinCell(cell))
                 return true;
@@ -522,7 +524,7 @@ class CellMerger {
         {
             for (let p of portals) {
                 let p1 = new Polygon(p.verts);
-
+                if (p._flags != PORTAL_VALID) continue;
                 engine.DrawPolyLined2(p1, new Vector3(1, 1, 0), 20);
             }
         }
@@ -541,7 +543,7 @@ class CellMerger {
             }
         }
 
-        if (start === null) start = this._cells[0];//{return false;}
+        if (start === null) return false;
         start.render(engine, engine.camera.position, frustum, xform);
         let count = 0;
         for (let cell of this._cells) {
@@ -560,27 +562,6 @@ class CellMerger {
             for (let p of polygons) {
             }
             this.renderPortals(engine, l._portals)
-        }
-    }
-    renderSingelCellHull(engine, id, render_ch = true) {
-        if (id < 0 || id >= this._cells.length) return;
-        let l = this._cells[id];
-        let polygons = l.aabb.BuildPolygons();
-        for (let p of polygons) {
-            if (render_ch) p.SetColor(0, 1, 0); else p.SetColor(0, 0, 1);
-            engine.DrawPolyLined(p, new Vector3(0, 1, 1));
-        }
-        this.renderPortals(engine, l._portals)
-        if (!render_ch) return;
-
-        for (let p of l._portals) {
-            let ll = p._look_at_cell;
-            let polygons = ll.aabb.BuildPolygons();
-            for (let p of polygons) {
-                p.SetColor(0, 0, 1);
-                engine.DrawPolyLined(p, new Vector3(0, 1, 1));
-            }
-
         }
     }
 
@@ -638,6 +619,12 @@ class CellMerger {
             if (!mergedVerts)
                 continue;
 
+            console.log(
+                "Merge:",
+                source_cell._id,
+                cellA._id,
+                cellB._id
+            );
 
             //
             // Polygone übernehmen
@@ -663,8 +650,7 @@ class CellMerger {
                     [...mergedVerts].reverse(),
                     source_cell
                 );
-            np0._id = source_portal._id;
-            np1._id = source_portal._brother._id;
+
             np0._brother = np1;
             np1._brother = np0;
 
@@ -794,57 +780,69 @@ class CellMerger {
 
     FindGodPortals() {
 
+        const EPS = 1e-6;
 
         for (const p of this._portals) {
-            let aabb = new AABB(p.verts);
-            aabb.scale(0.5);
-            let temp = [];
-            for (let hull of this._temp_polys) if (hull.IntersectedByBounds(aabb)) temp.push(hull);
 
-            if (IsPortalCovered(p, temp)) p._flags = PORTAL_VALID; else p._flags = PORTAL_NOT_VALID;
+            let fullyBlocked = true;
 
-        }
+            // jede Edge des Portals prüfen
+            for (let i = 0; i < p.verts.length; i++) {
 
-    }
+                let a = p.verts[i];
+                let b = p.verts[(i + 1) % p.verts.length];
+
+                let edge_list = [[a, b]];
+
+                // durch alle Hulls clippen
+                for (const h of this._temp_polys) {
+
+                    if (edge_list.length === 0) break;
+
+                    let next = [];
+
+                    for (const e of edge_list) {
+                        next.push(...h.clipSegmentOutsideHull(e));
+                    }
+
+                    edge_list = next;
+
+                    // früh abbrechen wenn schon komplett weg
+                    if (edge_list.length === 0) break;
+                }
+
+                // Cleanup: degenerierte Fragmente entfernen
+                edge_list = edge_list.filter(e =>
+                    e[0].sub(e[1]).length() > EPS
+                );
 
 
-    DebugCells() {
-        for (let cell of this._cells) {
-            console.log("Check cell [", cell._id, "_______________________:");
-            for (let p of cell._portals) {
-                console.log("Portal [", p._id, "] -> ", p._look_at_cell._id);
+                if (edge_list.length > 0) {
+                    fullyBlocked = false;
+                    break;
+                }
             }
-            console.log(" ");
-        }
 
+            p._flags = fullyBlocked ? PORTAL_VALID : PORTAL_NOT_VALID;
+            console.log(p._flags)
+        }
     }
+
+
+
 
 
 
     Optimize() {
         let changed = true;
         let start = this._cells.length;
-        this.DebugCells();
         while (changed) {
             changed = false;
             if (this.FindMergeCandidate()) changed = true;
             if (this.MergeThinCells()) changed = true;
-        }
-
-        for (let i = 0; i < this._cells.length; i++) {
-            this._cells[i]._id = i;
-            for (let p of this._cells[i]._polygons) p._id = CalcIndex(CELL_INDEX, 0, i);
 
         }
-
-        console.log("+----------------------------------------------------+");
-        console.log("|                                                    |");
-        console.log("|                                                    |");
-        console.log("|                                                    |");
-        console.log("|                                                    |");
-        console.log("+----------------------------------------------------+");
-        this.DebugCells();
-
+        this.FindGodPortals();
     }
 
 

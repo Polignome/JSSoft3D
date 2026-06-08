@@ -27,7 +27,7 @@ class BVH {
     }
     
     renderLeaf(engine,num) {}
-    renderLeafs(engine) {} 
+    renderLeafs(engine) {console.log("Stage fake")} 
     
     build(polygons) {
         this.total_node_count=0;

@@ -1,169 +1,193 @@
 
 class Edge {
-    constructor(u=0,du=0,v=0,dv=0,w=0,dw=0,x=0,dx=0,height=0) {
-        if (u!=undefined)  this._u=u;   else this._u=0; 
-        if (du!=undefined) this._du=du; else this._du=0; 
-        if (v!=undefined)  this._v=v;   else this._v=0; 
-        if (dv!=undefined) this._dv=dv; else this._dv=0; 
-        if (w!=undefined)  this._w=w;   else this._w=0;
-        if (dw!=undefined) this._dw=dw; else this._dw=0;  
-        if (x!=undefined)  this._x=x;   else this._x=0;
-        if (dx!=undefined) this._dx=dx; else this._dx=0; 
-		if (height!=undefined) this._height=0; 
-		else this._height=0;
-        this._aplha=1.0;
-        this._caplha=1.0;
-		this._color=new Vector3(0,0,0);
-		this._normal=new Vector3(0,0,0);
-		this._light=new Vector3(0,0,0);
-		this._dcolor=new Vector3(0,0,0);
-		this._dnormal=new Vector3(0,0,0);
-		this._dlight=new Vector3(0,0,0);
-		
-		
+    constructor(u = 0, du = 0, v = 0, dv = 0, w = 0, dw = 0, x = 0, dx = 0, height = 0) {
+        if (u != undefined) this._u = u; else this._u = 0;
+        if (du != undefined) this._du = du; else this._du = 0;
+        if (v != undefined) this._v = v; else this._v = 0;
+        if (dv != undefined) this._dv = dv; else this._dv = 0;
+        if (w != undefined) this._w = w; else this._w = 0;
+        if (dw != undefined) this._dw = dw; else this._dw = 0;
+        if (x != undefined) this._x = x; else this._x = 0;
+        if (dx != undefined) this._dx = dx; else this._dx = 0;
+        if (height != undefined) this._height = 0;
+        else this._height = 0;
+        this._aplha = 1.0;
+        this._caplha = 1.0;
+        this._color = new Vector3(0, 0, 0);
+        this._normal = new Vector3(0, 0, 0);
+        this._light = new Vector3(0, 0, 0);
+        this._dcolor = new Vector3(0, 0, 0);
+        this._dnormal = new Vector3(0, 0, 0);
+        this._dlight = new Vector3(0, 0, 0);
+        this._index = 0;
+
+
     }
 
-	set color(a)   {this._color  =new Vector3(a.x,a.y,a.z);}
-	set normal(a)  {this._normal =new Vector3(a.x,a.y,a.z);}
-	set light(a)   {this._light  =new Vector3(a.x,a.y,a.z);}
-	set dcolor(a)  {this._dcolor =new Vector3(a.x,a.y,a.z);}
-	set dnormal(a) {this._dnormal=new Vector3(a.x,a.y,a.z);}
-	set dlight(a)  {this._dlight =new Vector3(a.x,a.y,a.z);}
-	set alpha(a)   {this._aplha=a;}
-	set dalpha(a)   {this._daplha=a;}
+    set index(a) { this._index = a; }
+    get index() { return this._index; }
+    set color(a) { this._color = new Vector3(a.x, a.y, a.z); }
+    set normal(a) { this._normal = new Vector3(a.x, a.y, a.z); }
+    set light(a) { this._light = new Vector3(a.x, a.y, a.z); }
+    set dcolor(a) { this._dcolor = new Vector3(a.x, a.y, a.z); }
+    set dnormal(a) { this._dnormal = new Vector3(a.x, a.y, a.z); }
+    set dlight(a) { this._dlight = new Vector3(a.x, a.y, a.z); }
+    set alpha(a) { this._aplha = a; }
+    set dalpha(a) { this._daplha = a; }
 
-    get color() {return new Vector3(this._color);}
-	get normal() {return new Vector3(this._normal);}
-	get light() {return new Vector3(this._light);}
-	get dcolor() {return new Vector3(this._dcolor);}
-	get dnormal() {return new Vector3(this._dnormal);}
-	get dlight() {return new Vector3(this._dlight);}
-	get alpha()   {return this._aplha;}
-	get dalpha()   {return this._daplha;}
+    get color() { return new Vector3(this._color); }
+    get normal() { return new Vector3(this._normal); }
+    get light() { return new Vector3(this._light); }
+    get dcolor() { return new Vector3(this._dcolor); }
+    get dnormal() { return new Vector3(this._dnormal); }
+    get dlight() { return new Vector3(this._dlight); }
+    get alpha() { return this._aplha; }
+    get dalpha() { return this._daplha; }
 
-	
-   set u(a) {this._u=a;}
-   set du(a) {this._du=a;}
-   set v(a) {this._v=a;}
-   set dv(a) {this._dv=a;}
-   set w(a) {this._w=a;}
-   set dw(a) {this._dw=a;}
-   set x(a) {this._x=a;}
-   set dx(a) {this._dx=a;}
-   set height(a) {this._height=a;}
 
-   get u()  {return this._u;}
-   get du() {return this._du;}
-   get v()  {return this._v;}
-   get dv() {return this._dv;}
-   get w()  {return this._w;}
-   get dw() {return this._dw;}
-   get x()  {return this._x;}
-   get dx() {return this._dx;}
-   get height() {return this._height;}
+    set u(a) { this._u = a; }
+    set du(a) { this._du = a; }
+    set v(a) { this._v = a; }
+    set dv(a) { this._dv = a; }
+    set w(a) { this._w = a; }
+    set dw(a) { this._dw = a; }
+    set x(a) { this._x = a; }
+    set dx(a) { this._dx = a; }
+    set height(a) { this._height = a; }
+
+    get u() { return this._u; }
+    get du() { return this._du; }
+    get v() { return this._v; }
+    get dv() { return this._dv; }
+    get w() { return this._w; }
+    get dw() { return this._dw; }
+    get x() { return this._x; }
+    get dx() { return this._dx; }
+    get height() { return this._height; }
 }
 
 class Span {
     constructor() {
-        this._start=0;  // Start auf 
-        this._end=0;
-        this._dv=0;                 // TextureposY pro Pixel (oder pro x)
-        this._du=0;                 // TextureposX pro Pixel (oder pro x)
-        this._dw=0;                 // Tiefe pro Pixel (oder pro x)
-        this._y=0;                  // Y Positon
-        this._u=0;                  // TextureposX am Start 
-        this._v=0;                  // TextureposY am Start
-        this._w=0;                  // Tiefe am Start
-        this._n=new Vector3();      // normal am Start  
-        this._c=new Vector3();      // color am Start  
-        this._dn=new Vector3();     // normal pro Pixel (oder pro x)
-        this._dc=new Vector3();     // color pro Pixel (oder pro x)
-        this._t=null;               // Zeiger auf texture
-        this._a=1;                  // Attrib 0=background
-        this._index=-1;
+        this._start = 0;  // Start auf 
+        this._end = 0;
+        this._dv = 0;                 // TextureposY pro Pixel (oder pro x)
+        this._du = 0;                 // TextureposX pro Pixel (oder pro x)
+        this._dw = 0;                 // Tiefe pro Pixel (oder pro x)
+        this._y = 0;                  // Y Positon
+        this._u = 0;                  // TextureposX am Start 
+        this._v = 0;                  // TextureposY am Start
+        this._w = 0;                  // Tiefe am Start
+        this._n = new Vector3();      // normal am Start  
+        this._c = new Vector3();      // color am Start  
+        this._dn = new Vector3();     // normal pro Pixel (oder pro x)
+        this._dc = new Vector3();     // color pro Pixel (oder pro x)
+        this._t = null;               // Zeiger auf texture
+        this._a = 1;                  // Attrib 0=background
+        this._index = -1;
         this._alpha = 1.0;          // Transparents
-        this._texture=null;
+        this._texture = null;
     }
-    
-    get du()  {return this._du;}         // texure 
-    get dv()  {return this._dv;}
-    get dw()  {return this._dw;}
-    get dn()  {return new Vector3(this._dn);}
-    get dc()  {return new Vector3(this._dc);}
+
+    get du() { return this._du; }         // texure 
+    get dv() { return this._dv; }
+    get dw() { return this._dw; }
+
+
+
+    get dn() { return new Vector3(this._dn); }
+    get dc() { return new Vector3(this._dc); }
+    get n() { return new Vector3(this._n); }
+    get c() { return new Vector3(this._c); }
+    set dn(a) { this._dn = new Vector3(a); }
+    set dc(a) { this._dc = new Vector3(a); }
+    set n(a) { this._n = new Vector3(a); }
+    set c(a) { this._c = new Vector3(a); }
+
+
+
+
+    /*
+        get dn() { this._dn; }
+        get dc() { this._dc; }
+        get n() { this._n; }
+        get c() { this._c; }
+     */
+    /*
+        set dn(a) { this._dn.x = a.x; this._dn.y = a.y; this._dn.z = a.z; }
+        set dc(a) { this._dc.x = a.x; this._dc.y = a.y; this._dc.z = a.z; }
+        set n(a) { this._n.x = a.x; this._n.y = a.y; this._n.z = a.z; }
+        set c(a) { this._c.x = a.x; this._c.y = a.y; this._c.z = a.z; }
+    */
+
 
     get alpha() { return this._alpha; }
     set alpha(a) { this._alpha = a; }
 
-    get start() {return this._start;}
-    get end()  {return this._end;}
+    get start() { return this._start; }
+    get end() { return this._end; }
 
-    get index()  {return this._index;}
-    set index(a)  {this._index=a;}
+    get index() { return this._index; }
+    set index(a) { this._index = a; }
 
-    get u() {return this._u;}
-    get v() {return this._v;}
-    get w() {return this._w;}
-    get y() {return this._y;}
-    get a() {return this._a;}
-    get n()  {return new Vector3(this._n);}
-    get c()  {return new Vector3(this._c);}
+    get u() { return this._u; }
+    get v() { return this._v; }
+    get w() { return this._w; }
+    get y() { return this._y; }
+    get a() { return this._a; }
 
-    get t()  {return this._texture;}
+    get t() { return this._texture; }
 
-    set du(a)  {this._du=a;}
-    set dv(a)  {this._dv=a;}
-    set dw(a)  {this._dw=a;}
-    set dn(a)  {return new Vector3(a);}
-    set dc(a)  {return new Vector3(a);}
+    set du(a) { this._du = a; }
+    set dv(a) { this._dv = a; }
+    set dw(a) { this._dw = a; }
 
 
-    set start(a) {this._start=a;}
-    set end(a) {this._end=a;}
-    set a(a)  {this._a=a;}
-    set u(a)  {this._u=a;}
-    set v(a)  {this._v=a;}
-    set w(a)  {this._w=a;}
-    set y(a)  {this._y=a;}
-    set n(a)  {this._n=new Vector3(a);}
-    set c(a)  {this._c=new Vector3(a);}
-    set t(a)  {this._texture =a;}
-  
+    set start(a) { this._start = a; }
+    set end(a) { this._end = a; }
+    set a(a) { this._a = a; }
+    set u(a) { this._u = a; }
+    set v(a) { this._v = a; }
+    set w(a) { this._w = a; }
+    set y(a) { this._y = a; }
+    set t(a) { this._texture = a; }
+
     wAt(x) {
         return this._w + (x - this._start) * this._dw;
     };
     clone() {
         var s = new Span();
-        s. v = this.v;
-        s. w = this.w;
-        s. u = this.u;
-        s. a = this.a;
+        s.v = this.v;
+        s.w = this.w;
+        s.u = this.u;
+        s.a = this.a;
 
-        s. n = this.n;
-        s. c  = this.c;
+        s.n = this.n;
+        s.c = this.c;
 
-        s. du  = this.du;
-        s. dv  = this.dv;
-        s. dw  = this.dw;
-        s. dc  = this.dc;
-        s. dn  = this.dn;
-        
-        s. start = this.start;
-        s. end = this.end;
-        s. y = this.y;
-        s. t  = this.t;
-        s.index   = this.index;
+        s.du = this.du;
+        s.dv = this.dv;
+        s.dw = this.dw;
+
+        s.dc = this.dc;
+        s.dn = this.dn;
+
+        s.start = this.start;
+        s.end = this.end;
+        s.y = this.y;
+        s.t = this.t;
+        s.index = this.index;
         s.alpha = this.alpha;
+
         return s;
     }
 
-    clipped (nx0, nx1) 
-    {
-        const dx = nx0 - this._start;
+    clipped(nx0, nx1) {
+        let dx = nx0 - this._start;
 
         const s = this.clone();
 
         s.start = nx0;
-        s.end   = nx1;
+        s.end = nx1;
 
         // lineare Attribute verschieben
         s.u = this._u + dx * this._du;
@@ -171,92 +195,133 @@ class Span {
         s.w = this._w + dx * this._dw;
 
         s.alpha = this._alpha + dx * this._dalpha;
-        s.n = this._n.add(this._dn.mul(dx));
-        s.c = this._c.add(this._dc.mul(dx));
+
+
+
+        s._n.x = this._n.x + dx * this._dn.x
+        s._n.y = this._n.y + dx * this._dn.y
+        s._n.z = this._n.z + dx * this._dn.z
+
+        s._c.x = this._c.x + dx * this._dc.x
+        s._c.y = this._c.y + dx * this._dc.y
+        s._c.z = this._c.z + dx * this._dc.z
+
+        //        s.n = this._n.add(this._dn.mul(dx));
+        //        s.c = this._c.add(this._dc.mul(dx));
 
         return s;
     }
 
     Render(span_renderer) {
 
-      
-        let rasterizer=span_renderer.rasterizer;
-        let c=this.c;
-        let n=this.n;
-        let u=this.u;
-        let v=this.v;
-        let w=this.w;
-        let a=this.alpha;
-        let start = this.start;
-        let texture=this.t;
-        let span=this.y*rasterizer.width()+start;
-        
-        
-        
-        if (texture===null) {
-            let clear_color=RGB(255,100,100);
-            for (; start < this.end; start++) {
-             rasterizer.GetActiveZBuffer()[span]=w;
-             rasterizer.GetActiveBuffer()[span]=clear_color;
-             rasterizer.GetActiveIBuffer()[span]=this._index;
-             span++;
-          }
-          return;
-        }
-        
-        
-        
-        let s1=span;  
 
-        for (; start < this.end; start++)
-		{
-        
-            rasterizer.GetActiveZBuffer()[span]=w;
-            rasterizer.GetActiveIBuffer()[span]=this._index;
-            {
-			    let	z = 1.0 / w;
-			    let	s = (u * z);
-			    let	t = (v * z);
-			    let	aa = (a * z);
-			    let uu=(Math.abs(s*texture.width)|0)%texture.width;
-    		    let vv=(Math.abs(t*texture.height)|0)%texture.height;
-                let back=rasterizer.GetActiveBuffer()[span];
-                //let front=this.t.getPixelL(uu|0,vv|0,w*40);
-                let front=this.t.getPixelL(uu|0,vv|0,w*30);
-//	    		rasterizer.GetActiveBuffer()[span]=RGBBlend(back,front,1);
-	    		rasterizer.GetActiveBuffer()[span]=front;
-			} 
+        let rasterizer = span_renderer.rasterizer;
+        let c = this.c;
+        let n = this.n;
+        let u = this.u;
+        let v = this.v;
+        let w = this.w;
+
+
+        let start = this.start;
+        let texture = this.t;
+        let span = this.y * rasterizer.width() + start;
+        let spann = (this.y * (rasterizer.width() * 3) + (start * 3));
+
+
+
+        if (texture === null) {
+            let clear_color = 0xff000000;//RGB(255,100,100);
+            for (; start < this.end; start++) {
+                rasterizer.GetActiveZBuffer()[span] = w;
+                rasterizer.GetActiveBuffer()[span] = clear_color;
+                rasterizer.GetActiveIBuffer()[span] = this._index;
+                rasterizer.GetActiveNBuffer()[(span * 3 + 0)] = 1;
+                rasterizer.GetActiveNBuffer()[(span * 3 + 1)] = 0;
+                rasterizer.GetActiveNBuffer()[(span * 3 + 2)] = 0;
+                spann += 3;
 
                 span++;
-				u += this.du;
-				v += this.dv;
-   			    w += this.dw;
-              	c = c.add(this.dc);
-              	n = n.add(this.dn);
+            }
+            return;
+        }
 
-		}
+
+
+
+
+        for (; start < this.end; start++) {
+
+            rasterizer.GetActiveZBuffer()[span] = w;
+            rasterizer.GetActiveIBuffer()[span] = this._index;
+
+
+            {
+                let z = 1.0 / w;
+                let s = (u * z);
+                let t = (v * z);
+                let nnx = n.x * z;
+                let nny = n.y * z;
+                let nnz = n.z * z;
+
+                rasterizer.GetActiveNBuffer()[(span * 3) + 0] = nnx;
+                rasterizer.GetActiveNBuffer()[(span * 3) + 1] = nny;
+                rasterizer.GetActiveNBuffer()[(span * 3) + 2] = nnz;
+
+
+                let uu = (Math.abs(s * texture.width) | 0) % texture.width;
+                let vv = (Math.abs(t * texture.height) | 0) % texture.height;
+                let front = this.t.getPixelL(uu | 0, vv | 0, w * 30);
+                //let front = this.t.getPixel(uu | 0, vv | 0);
+                /*
+                                let cx = (c.x * z);
+                                let cy = (c.y * z);
+                                let cz = (c.z * z);
+                
+                                front = RGB(((cx * 255) | 0) % 256,
+                                    ((cy * 255) | 0) % 256,
+                                    ((cz * 255) | 0) % 256);
+                
+                */
+                rasterizer.GetActiveBuffer()[span] = front;
+            }
+
+            span++;
+            u += this.du;
+            v += this.dv;
+            w += this.dw;
+
+            c.x += this._dc.x
+            c.y += this._dc.y
+            c.z += this._dc.z
+
+            n.x += this._dn.x
+            n.y += this._dn.y
+            n.z += this._dn.z
+
+        }
 
     }
-   
+
 }
 
 
 class SpanRenderer {
 
 
-    get width()  {return this._width;}
-    get height() {return this._height;}
-    get pitch()  {return this._width;}
-    get rasterizer() {return this._rasterizer;}
-    set rasterizer(a) {this._rasterizer=a;}
-    get max_depth() {return this._rasterizer.max_depth};
+    get width() { return this._width; }
+    get height() { return this._height; }
+    get pitch() { return this._width; }
+    get rasterizer() { return this._rasterizer; }
+    set rasterizer(a) { this._rasterizer = a; }
+    get max_depth() { return this._rasterizer.max_depth };
 
     constructor(rasterizer) {
-        this._rasterizer=rasterizer;
+        this._rasterizer = rasterizer;
         this._line = new Array();
         this._transparent = new Array(height);
-        this.SetSize(this._rasterizer.width,this._rasterizer.height);
-         
+        this.SetSize(this._rasterizer.width, this._rasterizer.height);
+
     }
 
     subtractSpan(span, cut0, cut1) {
@@ -281,9 +346,9 @@ class SpanRenderer {
         const x1 = Math.min(a.end, b.end);
         return (x0 < x1) ? [x0, x1] : null;
     }
-   
+
     clipAgainst(a, b) {
-         const ov = this.overlap(a, b);
+        const ov = this.overlap(a, b);
         if (!ov) {
             return { a: [a], b: [b] };
         }
@@ -309,13 +374,13 @@ class SpanRenderer {
     }
 
     insertSpan(newSpan, visible) {
-        let fragments = [ newSpan ];
+        let fragments = [newSpan];
 
         for (let i = 0; i < visible.length; i++) {
             const oldSpan = visible[i];
 
             let newFragments = [];
-            let oldFragments = [ oldSpan ];
+            let oldFragments = [oldSpan];
 
             for (const frag of fragments) {
                 for (const oldFrag of oldFragments) {
@@ -333,13 +398,13 @@ class SpanRenderer {
 
             if (fragments.length === 0) {
                 return; // komplett verdeckt
+            }
         }
+
+        visible.push(...fragments);
     }
 
-    visible.push(...fragments);
-    }
-
-     resolveScanline(spans) {
+    resolveScanline(spans) {
         const visible = [];
 
         for (const s of spans) {
@@ -347,204 +412,265 @@ class SpanRenderer {
         }
 
         visible.sort((a, b) => a.start - b.start);
-    return visible;
+        return visible;
     }
-    
+
     Start() {
-        if (this._width != this._rasterizer.width || this._rasterizer.height != this._height)
-        {
-          this.SetSize(this._rasterizer.width,this._rasterizer.height) ;
+        if (this._width != this._rasterizer.width || this._rasterizer.height != this._height) {
+            this.SetSize(this._rasterizer.width, this._rasterizer.height);
         }
-        this.Init();  
+        this.Init();
 
-        
-    } 
 
-    SetSize(width=0,height=0) {
-        if (this._width === width && this._height===height) return;
-        this._width=width;
-        this._height=height;
+    }
+
+    SetSize(width = 0, height = 0) {
+        if (this._width === width && this._height === height) return;
+        this._width = width;
+        this._height = height;
         this.Init();
     }
 
-    calcEdgeDeltas(edge,top,bot,shade=false)
-    {   
-        var overHeight=0;
-	    var h=(bot.y - top.y);
-        if (h!=0) overHeight = 1.0 / h;
-	    
+    calcEdgeDeltas(edge, top, bot, shade = false) {
+        var overHeight = 0;
+        var h = (bot.y - top.y);
+        if (h != 0) overHeight = 1.0 / h;
+
         edge.dalpha = (bot.alpha - top.alpha) * overHeight;
-	    edge.du = (bot.u - top.u) * overHeight;
-	    edge.dv = (bot.v - top.v) * overHeight;
-	    edge.dw = (bot.w - top.w) * overHeight;
-	    edge.dx = (bot.x - top.x) * overHeight;
+        edge.du = (bot.u - top.u) * overHeight;
+        edge.dv = (bot.v - top.v) * overHeight;
+        edge.dw = (bot.w - top.w) * overHeight;
+        edge.dx = (bot.x - top.x) * overHeight;
 
-	    edge.dlight  = bot.light.sub(top.light).mul(overHeight);
-	    edge.dnormal = bot.normal.sub(top.normal).mul(overHeight);
-	    edge.dcolor  = bot.color.sub(top.color).mul(overHeight);
+        edge._dlight.x = (bot.light.x - top.light.x) * overHeight;
+        edge._dlight.y = (bot.light.y - top.light.y) * overHeight;
+        edge._dlight.z = (bot.light.z - top.light.z) * overHeight;
 
-	// Screen pixel Adjustments (some call this "sub-pixel accuracy")
+        edge._dnormal.x = (bot._normal.x - top._normal.x) * overHeight;
+        edge._dnormal.y = (bot._normal.y - top._normal.y) * overHeight;
+        edge._dnormal.z = (bot._normal.z - top._normal.z) * overHeight;
 
-	    var	subPix =  top.iy - top.y;
-	    edge.dalpha  = top.dalpha + edge.ddalpha * subPix;
-	    edge.u  = top.u + edge.du * subPix;
-    	edge.v  = top.v + edge.dv * subPix;
-	    edge.w  = top.w + edge.dw * subPix;
-	    edge.x  = top.x + edge.dx * subPix;
+        edge._dcolor.x = (bot._color.x - top._color.x) * overHeight;
+        edge._dcolor.y = (bot._color.y - top._color.y) * overHeight;
+        edge._dcolor.z = (bot._color.z - top._color.z) * overHeight;
 
-    	edge.light  = top.light.add(edge.dlight.mul(subPix));
-	    edge.normal = top.normal.add(edge.dnormal.mul(subPix));
-	    edge.color  = top.color.add(edge.dcolor.mul(subPix));
+
+
+        //        edge.dlight = bot.light.sub(top.light).mul(overHeight);
+        //        edge.dnormal = bot.normal.sub(top.normal).mul(overHeight);
+        //        edge.dcolor = bot.color.sub(top.color).mul(overHeight);
+
+        // Screen pixel Adjustments (some call this "sub-pixel accuracy")
+
+        var subPix = top.iy - top.y;
+        edge.dalpha = top.dalpha + edge.ddalpha * subPix;
+        edge.u = top.u + edge.du * subPix;
+        edge.v = top.v + edge.dv * subPix;
+        edge.w = top.w + edge.dw * subPix;
+        edge.x = top.x + edge.dx * subPix;
+
+
+        edge._light.x = top._light.x + edge._dlight.x * subPix;
+        edge._light.y = top._light.y + edge._dlight.y * subPix;
+        edge._light.z = top._light.z + edge._dlight.z * subPix;
+
+        edge._normal.x = top.normal.x + edge._dnormal.x * subPix;
+        edge._normal.y = top.normal.y + edge._dnormal.y * subPix;
+        edge._normal.z = top.normal.z + edge._dnormal.z * subPix;
+
+        edge._color.x = top._color.x + edge._dcolor.x * subPix;
+        edge._color.y = top._color.y + edge._dcolor.y * subPix;
+        edge._color.z = top._color.z + edge._dcolor.z * subPix;
+
+
+        //        edge.light = top.light.add(edge.dlight.mul(subPix));
+        //        edge.normal = top.normal.add(edge.dnormal.mul(subPix));
+        //       edge.color = top.color.add(edge.dcolor.mul(subPix));
     }
 
     AddPrimitive(primitive) {
-      this.AddPrimitive_span(primitive); 
+        this.AddPrimitive_span(primitive);
     }
 
 
-   AddPrimitive_span(primitive) // fehlerhaft
-   {
-	// Find the top-most vertex
-	let verts=primitive.sverts;
-
-    var lastVert=verts.length-1;
-    var lTop=0;
-    var rTop=0;
-  
-    
-    
-    for (let i=0;i<verts.length;i++)
+    AddPrimitive_span(primitive) // fehlerhaft
     {
-	 verts[i].iy =  Math.ceil(verts[i].y);
-	 if (verts[i].y < verts[lTop].y) lTop = i;
-   }
+        // Find the top-most vertex
+        let verts = primitive.sverts;
 
-	// Make sure we have the top-most vertex that is earliest in the winding order
-
-	if (verts[lastVert].y == verts[lTop].y && verts[0].y == verts[lTop].y) lTop = lastVert;
-
-	rTop = lTop;
-
-	// Top scanline of the polygon in the frame buffer
-
-	var	fb = verts[lTop].iy; //* this.pitch;
-	
-
-	// Left & Right edges (primed with 0 to force edge calcs first-time through)
-
-	var	le = new Edge();
-    var re = new Edge();
-	le.height = 0;
-	re.height = 0;
-
-	// Render the polygon
-
-	var	done = false;
-	while(done==false)
-	{
+        var lastVert = verts.length - 1;
+        var lTop = 0;
+        var rTop = 0;
 
 
-		if (!le.height)
-		{
-			let lBot = lTop - 1; 
-			if (lBot < 0) lBot = verts.length-1;
-             le.height = verts[lBot].iy - verts[lTop].iy;
-			
-            if (le.height < 0) return;
-			this.calcEdgeDeltas(le, verts[lTop], verts[lBot]);
-			lTop = lBot;
-			if (lTop == rTop) done = true;
-			if (lTop != rTop && done==true) return;
-		}
 
-		if (!re.height)
-		{
-			var rBot = rTop + 1; 
-      
-      if (rBot > lastVert) rBot = 0;
-			re.height = verts[rBot].iy - verts[rTop].iy;
-			if (re.height < 0) return;
-			this.calcEdgeDeltas(re, verts[rTop], verts[rBot]);
-			rTop = rBot;
-			if (lTop == rTop) done = true;
-			if (lTop != rTop && done==true) return;
-		}
+        for (let i = 0; i < verts.length; i++) {
+            //console.log(verts[i].normal.x, verts[i].normal.y, verts[i].normal.z);
+            verts[i].iy = Math.ceil(verts[i].y);
+            if (verts[i].y < verts[lTop].y) lTop = i;
+        }
 
-		// Get the height
+        // Make sure we have the top-most vertex that is earliest in the winding order
 
-		var	height = Math.min(le.height, re.height)|0;
+        if (verts[lastVert].y == verts[lTop].y && verts[0].y == verts[lTop].y) lTop = lastVert;
 
-		// Subtract the height from each edge
+        rTop = lTop;
 
-		le.height -= height;
-		re.height -= height;
+        // Top scanline of the polygon in the frame buffer
 
-        height=height | 0;
-
-		// Render the current trapezoid defined by left & right edges
-  
-
-		
-    while(((height--)|0) )
-		{
+        var fb = verts[lTop].iy; //* this.pitch;
 
 
-            var span = new Span();
-            span._index=primitive._id;
-			var		overWidth = 1.0 / (re.x - le.x);
-			span.dalpha  = (re.alpha - le.alpha) * overWidth;
-			span.du  = (re.u - le.u) * overWidth;
-			span.dv  = (re.v - le.v) * overWidth;
-			span.dw  = (re.w - le.w) * overWidth;
-            span.dc  = re.color.sub(le.color).mul(overWidth);
-            span.dn  = re.normal.sub(le.normal).mul(overWidth);
+        // Left & Right edges (primed with 0 to force edge calcs first-time through)
 
-			// Find the end-points
+        var le = new Edge();
+        var re = new Edge();
+        le.height = 0;
+        re.height = 0;
 
-			span.start = Math.ceil(le.x)|0;
-			span.end   = Math.ceil(re.x)|0;
+        // Render the polygon
 
-			// Texture adjustment (some call this "sub-texel accuracy")
+        var done = false;
+        while (done == false) {
 
-			var		subTex =  span.start - le.x;
 
-			span.alpha = (le.alpha + span.dalpha * subTex) ;
-			span.u = (le.u + span.du * subTex) ;
-			span.v = (le.v + span.dv * subTex) ;
-			span.w = (le.w + span.dw * subTex);
-            span.c  = le.color.add(span.dc.mul(subTex));
-            span.n  = le.normal.add(span.dn.mul(subTex));
-            span.y = fb;
-			span.t=primitive._texture;
-            
-			this.AddSpan(span);
-			// Step
-            
-			le.u += le.du;
-			le.v += le.dv;
-			le.w += le.dw;
-			le.x += le.dx;
-            le.alpha+=le.dalpha;
-            le.color = le.color.add(le.dcolor);
-            le.normal = le.normal.add(le.dnormal);
+            if (!le.height) {
+                let lBot = lTop - 1;
+                if (lBot < 0) lBot = verts.length - 1;
+                le.height = verts[lBot].iy - verts[lTop].iy;
 
-			re.u += re.du;
-			re.v += re.dv;
-			re.w += re.dw;
-			re.x += re.dx;
-            re.alpha+=re.dalpha;
-			re.normal = re.normal.add(re.dnormal);
-            fb++;
-			
-    		
+                if (le.height < 0) return;
+                this.calcEdgeDeltas(le, verts[lTop], verts[lBot]);
+                lTop = lBot;
+                if (lTop == rTop) done = true;
+                if (lTop != rTop && done == true) return;
+            }
+
+            if (!re.height) {
+                var rBot = rTop + 1;
+
+                if (rBot > lastVert) rBot = 0;
+                re.height = verts[rBot].iy - verts[rTop].iy;
+                if (re.height < 0) return;
+                this.calcEdgeDeltas(re, verts[rTop], verts[rBot]);
+                rTop = rBot;
+                if (lTop == rTop) done = true;
+                if (lTop != rTop && done == true) return;
+            }
+
+            // Get the height
+
+            var height = Math.min(le.height, re.height) | 0;
+
+            // Subtract the height from each edge
+
+            le.height -= height;
+            re.height -= height;
+
+            height = height | 0;
+
+            // Render the current trapezoid defined by left & right edges
+
+
+
+            while (((height--) | 0)) {
+
+
+                var span = new Span();
+                span._index = primitive._id;
+                var overWidth = 1.0 / (re.x - le.x);
+                span.dalpha = (re.alpha - le.alpha) * overWidth;
+                span.du = (re.u - le.u) * overWidth;
+                span.dv = (re.v - le.v) * overWidth;
+                span.dw = (re.w - le.w) * overWidth;
+
+                span._dc.x = (re._color.x - le._color.x) * overWidth
+                span._dc.y = (re._color.y - le._color.y) * overWidth
+                span._dc.z = (re._color.z - le._color.z) * overWidth
+
+                span._dn.x = (re._normal.x - le._normal.x) * overWidth
+                span._dn.y = (re._normal.y - le._normal.y) * overWidth
+                span._dn.z = (re._normal.z - le._normal.z) * overWidth
+
+
+
+                //span.dc = re.color.sub(le.color).mul(overWidth);
+                //span.dn = re.normal.sub(le.normal).mul(overWidth);
+
+                // Find the end-points
+
+                span.start = Math.ceil(le.x) | 0;
+                span.end = Math.ceil(re.x) | 0;
+
+                // Texture adjustment (some call this "sub-texel accuracy")
+
+                var subTex = span.start - le.x;
+
+                span.alpha = (le.alpha + span.dalpha * subTex);
+                span.u = (le.u + span.du * subTex);
+                span.v = (le.v + span.dv * subTex);
+                span.w = (le.w + span.dw * subTex);
+
+                span._c.x = (le._color.x + span._dc.x * subTex);
+                span._c.y = (le._color.y + span._dc.y * subTex);
+                span._c.z = (le._color.z + span._dc.z * subTex);
+
+                span._n.x = (le._normal.x + span._dn.x * subTex);
+                span._n.y = (le._normal.y + span._dn.y * subTex);
+                span._n.z = (le._normal.z + span._dn.z * subTex);
+
+                span.y = fb;
+                span.t = primitive._texture;
+                span.index = primitive._id;
+                this.AddSpan(span);
+                // Step
+
+                le.u += le.du;
+                le.v += le.dv;
+                le.w += le.dw;
+                le.x += le.dx;
+                le.alpha += le.dalpha;
+
+                le._color.x += le._dcolor.x;
+                le._color.y += le._dcolor.y;
+                le._color.z += le._dcolor.z;
+
+                le._normal.x += le._dnormal.x;
+                le._normal.y += le._dnormal.y;
+                le._normal.z += le._dnormal.z;
+
+                //le.color = le.dcolor.add(le.dcolor);
+                //le.normal = le.dnormal.add(le.dnormal);
+
+                re.u += re.du;
+                re.v += re.dv;
+                re.w += re.dw;
+                re.x += re.dx;
+                re.alpha += re.dalpha;
+
+
+                re._color.x += re._dcolor.x;
+                re._color.y += re._dcolor.y;
+                re._color.z += re._dcolor.z;
+
+                re._normal.x += re._dnormal.x;
+                re._normal.y += re._dnormal.y;
+                re._normal.z += re._dnormal.z;
+
+
+
+                //                re.color = re.dcolor.add(re.dcolor);
+                //                re.normal = re.dnormal.add(re.dnormal);
+                fb++;
+
+
+            }
+
+            // console.log("End Loope");
+        }
     }
-    
-   // console.log("End Loope");
-	}
-   }
 
-    AddSpan(span)
-    {
+    AddSpan(span) {
         if (span.alpha < 1.0) {
             this._transparent[span.y].push(span); // 🔥 transparent
         } else {
@@ -556,35 +682,34 @@ class SpanRenderer {
     }
 
     Init() {
-       this._m_spans_in=0;
-       this._m_spans_out=0;
-       this._line = new Array(this._rasterizer.height());
-       this._transparent = new Array(this._rasterizer.height());
+        this._m_spans_in = 0;
+        this._m_spans_out = 0;
+        this._line = new Array(this._rasterizer.height());
+        this._transparent = new Array(this._rasterizer.height());
 
-       for (let y=0;y<this._rasterizer.height();y++) {
-          let span= new Span();
-          span.y=y;
-          span.start=0;
-          span.end=this._rasterizer.width();
-          span.t=null;
-          span.w=-this.max_depth/2;
-          span.a=0;
-          this._line[y]=new Array();
-          this._transparent[y] = [];
-          this.AddSpan(span);
-      }
+        for (let y = 0; y < this._rasterizer.height(); y++) {
+            let span = new Span();
+            span.y = y;
+            span.start = 0;
+            span.end = this._rasterizer.width();
+            span.t = null;
+            span.w = -this.max_depth / 2;
+            span.a = 0;
+            this._line[y] = new Array();
+            this._transparent[y] = [];
+            this.AddSpan(span);
+        }
     }
 
-    get SpansIn() {return this._m_spans_in;}
-    get SpansOut() {return this._m_spans_out;}
+    get SpansIn() { return this._m_spans_in; }
+    get SpansOut() { return this._m_spans_out; }
 
-    Render(sort=true) {
+    Render(sort = true) {
 
-        this._spans_out=0;
-        this._spans_in=0;
+        this._spans_out = 0;
+        this._spans_in = 0;
 
-        for (let y=0;y<this._line.length;y++)
-        {
+        for (let y = 0; y < this._line.length; y++) {
             // ===== OPAQUE =====
             this._spans_in += this._line[y].length;
 
@@ -602,7 +727,7 @@ class SpanRenderer {
             let transp = this._transparent[y];
 
             // Back-to-front sortieren
-            transp.sort((a,b) => b.w - a.w);
+            transp.sort((a, b) => b.w - a.w);
 
             for (let s of transp) {
                 s.RenderTransparent(this);

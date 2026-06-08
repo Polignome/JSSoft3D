@@ -1,96 +1,106 @@
 <!DOCTYPE html>
 <html>
+
 <head>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
-  body {
-    font-family: "Lucida Console", "Courier New", monospace;
-   
-  }
+    body {
+      font-family: "Lucida Console", "Courier New", monospace;
 
-  
-  .container { overflow: hidden; } /* Für Clearfix */
-  .left-side { float: left; width: 50%; }
-  .right-side { float: left; width: 50%; }
-  
-  
+    }
 
+
+    .container {
+      overflow: hidden;
+    }
+
+    /* Für Clearfix */
+    .left-side {
+      float: left;
+      width: 50%;
+    }
+
+    .right-side {
+      float: left;
+      width: 50%;
+    }
   </style>
 </head>
 
- <body>
+<body>
 
 
 
-<p id="FPS">
-<br>
+  <p id="FPS">
+    <br>
 
-</p>
- <class id ="render">
- <canvas id="canvas" width="320" height="200" style = "border: 1px solid #aaaaaa"></canvas>
-</class>
-<br>
-<button onclick="LoadMap()">LoadMap</button>
-<button onclick="ClearDebugOut()">Clear console</button>
-<button onclick="LoadWad()">Load WAD</button>
+  </p>
+  <class id="render">
+    <canvas id="canvas" width="320" height="200" style="border: 1px solid #aaaaaa"></canvas>
+  </class>
+  <br>
+  <button onclick="LoadMap()">LoadMap</button>
+  <button onclick="ClearDebugOut()">Clear console</button>
+  <button onclick="MachWas()">help</button>
 
-<p  id="log" >
-</p>
-<b>Compiler options</b> Debug<input id="debug_checkbox" type="checkbox" /><br>
-CSG........................ <input id="csg_checkbox" type="checkbox" /><br>
-Remove non visible Polys... <input id="vis_checkbox" type="checkbox" /><br>
-Build final BSP............ <input id="bsp_checkbox" type="checkbox" /><br>
-Build Portals.............. <input id="por_checkbox" type="checkbox" /><br>
-Potentially Visible Set.... <input id="pvs_checkbox" type="checkbox" /><br>
-<br>
-
-
-
-<br>
-<b>Render options</b><br>
-Render Zbuffer............. <input id="render_zbuffer_checkbox" type="checkbox" /><br>
-Use Spanbuffer............. <input id="use_spanbuffer_checkbox" type="checkbox" /><br>
-Use node frustum cullling.. <input id="use_node_frustum_culling" type="checkbox" /><br>
-Use node hzbuffer cullling. <input id="use_node_hzbuffer_culling" type="checkbox" /><br>
-Use Timer.................. <input id="use_timer" type="checkbox" /><br>
-<br>
-
-
-<script src="./libs/Common.js"></script>
-<script src="./libs/StaticTextures.js"></script>
-<script src="./libs/FPSMeter.js"></script>
-<script src="./libs/Canvas.js"></script>
-<script src="./libs/Vmath.js"></script>
-<script src="./libs/Plane.js"></script>
-<script src="./libs/Vertex.js"></script>
-<script src="./libs/Csg.js"></script>
-<script src="./libs/Wad3.js"></script>
-
-<script src="./libs/MAP/Brush.js"></script>
-<script src="./libs/MAP/ConvexBuilder.js"></script>
-<script src="./libs/MAP/MAPReader.js"></script>
-
-<script src="./libs/Frustum.js"></script>
-<script src="./libs/Camera.js"></script>
-<script src="./libs/Texture.js"></script> 
-<script src="./libs/Primitive.js"></script>
-<script src="./libs/OcclusionMask.js"></script>
-
-<script src="./libs/AABB.js"></script>
-<script src="./libs/BVH.js"></script>
-<script src="./libs/BSP.js"></script>
-<script src="./libs/Portal.js"></script>
-
-<script src="./libs/HZB.js"></script>
-<script src="./libs/Span.js"></script>
-<script src="./libs/Rasterizer.js"></script>
-<script src="./libs/ObjLoader.js"></script>
-<script src="./libs/MapCompiler.js"></script>
-
-<script src="./libs/Main.js"></script>
-
-<textarea id="debugout" name="debugout" rows="10" cols="100"></textarea>
+  <p id="log">
+  </p>
+  <b>Compiler options</b> Debug<input id="debug_checkbox" type="checkbox" /><br>
+  CSG........................ <input id="csg_checkbox" type="checkbox" /><br>
+  Remove non visible Polys... <input id="vis_checkbox" type="checkbox" /><br>
+  Build final BSP............ <input id="bsp_checkbox" type="checkbox" /><br>
+  Build Portals.............. <input id="por_checkbox" type="checkbox" /><br>
+  Potentially Visible Set.... <input id="pvs_checkbox" type="checkbox" /><br>
+  <br>
 
 
 
+  <br>
+  <b>Render options</b><br>
+  Render Zbuffer............. <input id="render_zbuffer_checkbox" type="checkbox" /><br>
+  Use Spanbuffer............. <input id="use_spanbuffer_checkbox" type="checkbox" /><br>
+  Use node frustum cullling.. <input id="use_node_frustum_culling" type="checkbox" /><br>
+  Use node hzbuffer cullling. <input id="use_node_hzbuffer_culling" type="checkbox" /><br>
+  Use Timer.................. <input id="use_timer" type="checkbox" /><br>
+  Use Shader................. <input id="use_shader" type="checkbox" /><br>
+  <br>
 
+
+  <script src="./libs/Common.js"></script>
+  <script src="./libs/StaticTextures.js"></script>
+  <script src="./libs/FPSMeter.js"></script>
+  <script src="./libs/Filter.js"></script>
+  <script src="./libs/Canvas.js"></script>
+  <script src="./libs/Vmath.js"></script>
+  <script src="./libs/Plane.js"></script>
+  <script src="./libs/Vertex.js"></script>
+  <script src="./libs/Csg.js"></script>
+
+  <script src="./libs/MAP/Brush.js"></script>
+  <script src="./libs/MAP/ConvexBuilder.js"></script>
+  <script src="./libs/MAP/MAPReader.js"></script>
+
+  <script src="./libs/Frustum.js"></script>
+  <script src="./libs/Camera.js"></script>
+  <script src="./libs/Texture.js"></script>
+  <script src="./libs/Primitive.js"></script>
+  <script src="./libs/OcclusionMask.js"></script>
+  <script src="./libs/BeamTree.js"></script>
+
+  <script src="./libs/AABB.js"></script>
+  <script src="./libs/BVH.js"></script>
+  <script src="./libs/BSP.js"></script>
+
+  <script src="./libs/Portal.js"></script>
+  <script src="./libs/PVS.js"></script>
+  <script src="./libs/TJunction.js"></script>
+
+  <script src="./libs/HZB.js"></script>
+  <script src="./libs/Span.js"></script>
+  <script src="./libs/Rasterizer.js"></script>
+  <script src="./libs/ObjLoader.js"></script>
+  <script src="./libs/MapCompiler.js"></script>
+
+  <script src="./libs/Main.js"></script>
+
+  <textarea id="debugout" name="debugout" rows="10" cols="100"></textarea>
