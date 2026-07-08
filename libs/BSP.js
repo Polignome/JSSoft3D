@@ -56,7 +56,7 @@ class BSPNode {
         this._owner = ROOT_OWNER;
         this._leaf_id = -1;
         this._contents = -1;
-        this.finde = this.Finde_besten_Splitter2;
+        this.finde = this.Finde_besten_Splitter3;
         this._outside = false;
         if (parent == null) this._node_type = BSP_ROOD;
 
@@ -632,6 +632,106 @@ class BSPNode {
             //
             if (finalScore < best_score) {
                 best_score = finalScore;
+                best_index = i;
+            }
+        }
+
+        return best_index;
+    }
+Finde_besten_Splitter3(polyliste, nodeAABB, gewichtung = 18) {
+        let best_index = -1;
+        let best_score = Number.MAX_VALUE;
+
+        const kandidaten = [];
+
+        //---------------------------------------------
+        // Kandidaten vorsortieren
+        //---------------------------------------------
+
+        for (let i = 0; i < polyliste.length; i++) {
+            const p = polyliste[i];
+
+            if (p._was_best_splitter) continue;
+            if (p._can_not_be_splitter) continue;
+            if (p._create_from_aabb) continue;
+
+            const axisScore = this.AxisScore(p.plane.normal);
+            const areaScore = p.area || 1.0;
+
+            kandidaten.push({
+                index: i,
+                heuristic: axisScore * 10.0 + areaScore
+            });
+        }
+
+        kandidaten.sort((a, b) => b.heuristic - a.heuristic);
+
+        //---------------------------------------------
+        // SAH
+        //---------------------------------------------
+
+        const parentArea = nodeAABB.SurfaceArea()
+
+        for (const kandidat of kandidaten) {
+            const i = kandidat.index;
+            const splitter = polyliste[i];
+
+            let lFront = 0;
+            let lBack = 0;
+            let lSplits = 0;
+
+            for (let j = 0; j < polyliste.length; j++) {
+                if (i == j) continue;
+
+                const p = polyliste[j];
+
+                if (p._can_not_be_splitter)
+                    continue;
+
+                const c = splitter.plane.Classify(p);
+
+                if (c === FRONT) lFront++;
+                else
+                    if (c === BACK) lBack++;
+                    else
+                        if (c === SPANNING) { lSplits++; lFront++; lBack++; }
+            }
+
+            if (lFront == 0 && lBack == 0 && lSplits == 0)
+                continue;
+
+            //---------------------------------------------
+            // virtuelle Aufteilung
+            //---------------------------------------------
+
+            const split = nodeAABB.SplitAABB(splitter.plane);
+
+            const frontArea = split[0].SurfaceArea();
+            const backArea = split[1].SurfaceArea();
+
+
+            //---------------------------------------------
+            // klassische SAH
+            //---------------------------------------------
+
+            const sah =
+                (frontArea / parentArea) * lFront +
+                (backArea / parentArea) * lBack +
+                gewichtung * lSplits;
+
+            //---------------------------------------------
+            // Achsenbonus
+            //---------------------------------------------
+
+            const axisPenalty =
+                (1.0 - this.AxisScore(
+                    splitter.plane.normal)) * 5.0;
+
+            const score =
+                sah + axisPenalty;
+
+            if (score < best_score) {
+                best_score = score;
                 best_index = i;
             }
         }
