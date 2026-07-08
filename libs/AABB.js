@@ -21,6 +21,43 @@ class AABB {
 
     }
 
+        SplitAABB(plane) {
+        let front = new AABB(this);
+        let back = new AABB(this);
+
+        // dominante Achse bestimmen
+        let n = plane.normal;
+
+        if (Math.abs(n.x) > Math.abs(n.y) &&
+            Math.abs(n.x) > Math.abs(n.z)) {
+            front.min.x = plane.origin.x;
+            back.max.x = plane.origin.x;
+        }
+        else
+            if (Math.abs(n.y) > Math.abs(n.z)) {
+                front.min.y = plane.origin.y;
+                back.max.y = plane.origin.y;
+            }
+            else {
+                front.min.z = plane.origin.z;
+                back.max.z = plane.origin.z;
+            }
+
+        return [front, back];
+    }
+
+    SurfaceArea() {
+        const dx = this.max.x - this.min.x;
+        const dy = this.max.y - this.min.y;
+        const dz = this.max.z - this.min.z;
+
+        return 2 * (
+            dx * dy +
+            dx * dz +
+            dy * dz
+        );
+    }
+
     Add(a) {
 
         if (a instanceof Vector3) {
