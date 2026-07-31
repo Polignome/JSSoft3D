@@ -17,6 +17,8 @@ const PARSER_TEXTINFO_4_ERROR = -12
 const PARSER_TEXTINFO_5_ERROR = -13
 const PARSER_ILLEGAL_BRUSH_ERROR = -14
 
+/*
+*/
 function rgbToGray(r, g, b) {
     return 0.299 * r + 0.587 * g + 0.114 * b;
 }
@@ -39,7 +41,6 @@ function isString(ss) {
         ss = ss.slice(1, ss.length - 1);
         return ss;
     }
-
     return "";
 }
 
@@ -159,6 +160,20 @@ class MAPEntry {
     }
 }
 
+class LightSorce {
+    constructor(color, pos) {
+        this._color = new Vector4(color);
+        this._pos = new Vector3(pos);
+        console.log("[", this._pos.x, this._pos.y, this._pos.z, "]", this._color.x, this._color.y, this._color.z, this._color.w)
+    }
+
+    get pos() { return this._pos; }
+    get color() { return this._color; }
+
+    set pos(a) { this._po = new Vector3(a); }
+    set color(a) { this._color = new Vector4(a); }
+}
+
 
 class QMap {
     constructor() {
@@ -170,6 +185,24 @@ class QMap {
 
     }
 
+    GetLightList() {
+
+        let light_list = [];
+        for (let i = 0; i < this.map_entrys.length; i++) {
+            var entry = this.map_entrys[i];
+
+
+            if (entry.isLight()) {
+
+
+                light_list.push(new LightSorce(entry.light_color, entry.light_pos));
+                continue;
+            }
+        }
+        return light_list;
+
+    }
+
     GetBrushList() {
         const brush_list = [];
 
@@ -178,6 +211,7 @@ class QMap {
 
 
             if (entry.isLight()) {
+
                 continue;
             }
 

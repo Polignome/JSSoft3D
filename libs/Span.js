@@ -1,10 +1,17 @@
 
 class Edge {
-    constructor(u = 0, du = 0, v = 0, dv = 0, w = 0, dw = 0, x = 0, dx = 0, height = 0) {
+    constructor(u = 0, du = 0, v = 0, dv = 0, lu = 0, ldu = 0, lv = 0, ldv = 0, w = 0, dw = 0, x = 0, dx = 0, height = 0) {
         if (u != undefined) this._u = u; else this._u = 0;
         if (du != undefined) this._du = du; else this._du = 0;
         if (v != undefined) this._v = v; else this._v = 0;
         if (dv != undefined) this._dv = dv; else this._dv = 0;
+
+        if (lu != undefined) this._lu = lu; else this._lu = 0;
+        if (ldu != undefined) this._ldu = ldu; else this._ldu = 0;
+        if (lv != undefined) this._lv = lv; else this._lv = 0;
+        if (ldv != undefined) this._ldv = ldv; else this._ldv = 0;
+
+
         if (w != undefined) this._w = w; else this._w = 0;
         if (dw != undefined) this._dw = dw; else this._dw = 0;
         if (x != undefined) this._x = x; else this._x = 0;
@@ -49,6 +56,13 @@ class Edge {
     set du(a) { this._du = a; }
     set v(a) { this._v = a; }
     set dv(a) { this._dv = a; }
+
+    set lu(a) { this._lu = a; }
+    set ldu(a) { this._ldu = a; }
+    set lv(a) { this._lv = a; }
+    set ldv(a) { this._ldv = a; }
+
+
     set w(a) { this._w = a; }
     set dw(a) { this._dw = a; }
     set x(a) { this._x = a; }
@@ -59,6 +73,13 @@ class Edge {
     get du() { return this._du; }
     get v() { return this._v; }
     get dv() { return this._dv; }
+
+    get lu() { return this._lu; }
+    get ldu() { return this._ldu; }
+    get lv() { return this._lv; }
+    get ldv() { return this._ldv; }
+
+
     get w() { return this._w; }
     get dw() { return this._dw; }
     get x() { return this._x; }
@@ -72,10 +93,21 @@ class Span {
         this._end = 0;
         this._dv = 0;                 // TextureposY pro Pixel (oder pro x)
         this._du = 0;                 // TextureposX pro Pixel (oder pro x)
+
+        this._ldv = 0;                 // TextureposY pro Pixel (oder pro x)
+        this._ldu = 0;                 // TextureposX pro Pixel (oder pro x)
+
+
         this._dw = 0;                 // Tiefe pro Pixel (oder pro x)
         this._y = 0;                  // Y Positon
+
         this._u = 0;                  // TextureposX am Start 
         this._v = 0;                  // TextureposY am Start
+
+        this._lu = 0;                  // TextureposX am Start 
+        this._lv = 0;                  // TextureposY am Start
+
+
         this._w = 0;                  // Tiefe am Start
         this._n = new Vector3();      // normal am Start  
         this._c = new Vector3();      // color am Start  
@@ -86,38 +118,53 @@ class Span {
         this._index = -1;
         this._alpha = 1.0;          // Transparents
         this._texture = null;
+
+        this._ltexture = null;
+
+        this._light_map_posx = 0;
+        this._light_map_posy = 0;
+        this._light_map_width = 0;
+        this._light_map_height = 0;
     }
 
-    get du() { return this._du; }         // texure 
-    get dv() { return this._dv; }
     get dw() { return this._dw; }
 
 
 
+    get ldu() { return this._ldu; }         // texure 
+    get ldv() { return this._ldv; }
+    get lu() { return this._lu; }
+    get lv() { return this._lv; }
+
+    set ldu(a) { this._ldu = a; }         // texure 
+    set ldv(a) { this._ldv = a; }
+    set lu(a) { this._lu = a; }
+    set lv(a) { this._lv = a; }
+
+
+    get u() { return this._u; }
+    get v() { return this._v; }
+    set u(a) { this._u = a; }
+    set v(a) { this._v = a; }
+
+    get du() { return this._du; }         // texure 
+    get dv() { return this._dv; }
+    set du(a) { this._du = a; }
+    set dv(a) { this._dv = a; }
+
+
     get dn() { return new Vector3(this._dn); }
-    get dc() { return new Vector3(this._dc); }
-    get n() { return new Vector3(this._n); }
-    get c() { return new Vector3(this._c); }
     set dn(a) { this._dn = new Vector3(a); }
+
+    get dc() { return new Vector3(this._dc); }
     set dc(a) { this._dc = new Vector3(a); }
+
+    get n() { return new Vector3(this._n); }
     set n(a) { this._n = new Vector3(a); }
+
+    get c() { return new Vector3(this._c); }
     set c(a) { this._c = new Vector3(a); }
 
-
-
-
-    /*
-        get dn() { this._dn; }
-        get dc() { this._dc; }
-        get n() { this._n; }
-        get c() { this._c; }
-     */
-    /*
-        set dn(a) { this._dn.x = a.x; this._dn.y = a.y; this._dn.z = a.z; }
-        set dc(a) { this._dc.x = a.x; this._dc.y = a.y; this._dc.z = a.z; }
-        set n(a) { this._n.x = a.x; this._n.y = a.y; this._n.z = a.z; }
-        set c(a) { this._c.x = a.x; this._c.y = a.y; this._c.z = a.z; }
-    */
 
 
     get alpha() { return this._alpha; }
@@ -129,24 +176,22 @@ class Span {
     get index() { return this._index; }
     set index(a) { this._index = a; }
 
-    get u() { return this._u; }
-    get v() { return this._v; }
     get w() { return this._w; }
+    set dw(a) { this._dw = a; }
+
     get y() { return this._y; }
     get a() { return this._a; }
 
     get t() { return this._texture; }
 
-    set du(a) { this._du = a; }
-    set dv(a) { this._dv = a; }
-    set dw(a) { this._dw = a; }
+
+
+
 
 
     set start(a) { this._start = a; }
     set end(a) { this._end = a; }
     set a(a) { this._a = a; }
-    set u(a) { this._u = a; }
-    set v(a) { this._v = a; }
     set w(a) { this._w = a; }
     set y(a) { this._y = a; }
     set t(a) { this._texture = a; }
@@ -157,15 +202,19 @@ class Span {
     clone() {
         var s = new Span();
         s.v = this.v;
-        s.w = this.w;
         s.u = this.u;
+        s.lv = this.lv;
+        s.lu = this.lu;
         s.a = this.a;
+        s.w = this.w;
 
         s.n = this.n;
         s.c = this.c;
 
         s.du = this.du;
         s.dv = this.dv;
+        s.ldu = this.ldu;
+        s.ldv = this.ldv;
         s.dw = this.dw;
 
         s.dc = this.dc;
@@ -177,6 +226,12 @@ class Span {
         s.t = this.t;
         s.index = this.index;
         s.alpha = this.alpha;
+
+        s._ltexture = this._ltexture;
+        s._light_map_posx = this._light_map_posx;
+        s._light_map_posy = this._light_map_posy;
+        s._light_map_width = this._light_map_width;
+        s._light_map_height = this._light_map_height;
 
         return s;
     }
@@ -192,6 +247,10 @@ class Span {
         // lineare Attribute verschieben
         s.u = this._u + dx * this._du;
         s.v = this._v + dx * this._dv;
+        s.lu = this._lu + dx * this._ldu;
+        s.lv = this._lv + dx * this._ldv;
+
+
         s.w = this._w + dx * this._dw;
 
         s.alpha = this._alpha + dx * this._dalpha;
@@ -220,11 +279,14 @@ class Span {
         let n = this.n;
         let u = this.u;
         let v = this.v;
+        let lu = this.lu;
+        let lv = this.lv;
         let w = this.w;
 
 
         let start = this.start;
         let texture = this.t;
+        let ltexture = this._ltexture;
         let span = this.y * rasterizer.width() + start;
         let spann = (this.y * (rasterizer.width() * 3) + (start * 3));
 
@@ -271,7 +333,24 @@ class Span {
 
                 let uu = (Math.abs(s * texture.width) | 0) % texture.width;
                 let vv = (Math.abs(t * texture.height) | 0) % texture.height;
-                let front = this.t.getPixelL(uu | 0, vv | 0, w * 30);
+                let front = this.t.getPixelL(uu | 0, vv | 0, 1);
+
+                // let front = 0;//this.t.getPixelL(uu | 0, vv | 0, 1);
+
+
+                if (ltexture) {
+                    let ls = (lu * z);
+                    let lt = (lv * z);
+                    let luu = this._light_map_posx + (Math.abs(ls * this._light_map_width) | 0) % this._light_map_width;
+                    let lvv = this._light_map_posy + (Math.abs(lt * this._light_map_height) | 0) % this._light_map_height;
+                    let lc = ltexture.GetPixel(luu | 0, lvv | 0);
+                    front = lc//RGB((RGBToRed(front) + RGBToRed(lc)) >> 1, (RGBToGreen(front) + RGBToGreen(lc)) >> 1, (RGBToBlue(front) + RGBToBlue(lc)) >> 1);
+
+                }
+
+
+                //let front = this.t.getPixelL(uu | 0, vv | 0, w * 30);
+                //let front = this.t.getPixelL(uu | 0, vv | 0, 1);
                 //let front = this.t.getPixel(uu | 0, vv | 0);
                 /*
                                 let cx = (c.x * z);
@@ -289,6 +368,10 @@ class Span {
             span++;
             u += this.du;
             v += this.dv;
+
+            lu += this.ldu;
+            lv += this.ldv;
+
             w += this.dw;
 
             c.x += this._dc.x
@@ -439,6 +522,10 @@ class SpanRenderer {
         edge.dalpha = (bot.alpha - top.alpha) * overHeight;
         edge.du = (bot.u - top.u) * overHeight;
         edge.dv = (bot.v - top.v) * overHeight;
+
+        edge.ldu = (bot.lu - top.lu) * overHeight;
+        edge.ldv = (bot.lv - top.lv) * overHeight;
+
         edge.dw = (bot.w - top.w) * overHeight;
         edge.dx = (bot.x - top.x) * overHeight;
 
@@ -466,6 +553,10 @@ class SpanRenderer {
         edge.dalpha = top.dalpha + edge.ddalpha * subPix;
         edge.u = top.u + edge.du * subPix;
         edge.v = top.v + edge.dv * subPix;
+
+        edge.lu = top.lu + edge.ldu * subPix;
+        edge.lv = top.lv + edge.ldv * subPix;
+
         edge.w = top.w + edge.dw * subPix;
         edge.x = top.x + edge.dx * subPix;
 
@@ -580,8 +671,13 @@ class SpanRenderer {
                 span._index = primitive._id;
                 var overWidth = 1.0 / (re.x - le.x);
                 span.dalpha = (re.alpha - le.alpha) * overWidth;
+
                 span.du = (re.u - le.u) * overWidth;
                 span.dv = (re.v - le.v) * overWidth;
+
+                span.ldu = (re.lu - le.lu) * overWidth;
+                span.ldv = (re.lv - le.lv) * overWidth;
+
                 span.dw = (re.w - le.w) * overWidth;
 
                 span._dc.x = (re._color.x - le._color.x) * overWidth
@@ -609,6 +705,10 @@ class SpanRenderer {
                 span.alpha = (le.alpha + span.dalpha * subTex);
                 span.u = (le.u + span.du * subTex);
                 span.v = (le.v + span.dv * subTex);
+
+                span.lu = (le.lu + span.ldu * subTex);
+                span.lv = (le.lv + span.ldv * subTex);
+
                 span.w = (le.w + span.dw * subTex);
 
                 span._c.x = (le._color.x + span._dc.x * subTex);
@@ -621,12 +721,21 @@ class SpanRenderer {
 
                 span.y = fb;
                 span.t = primitive._texture;
+                span._ltexture = primitive._ltexture;
+                span._light_map_width = primitive._light_map_width
+                span._light_map_height = primitive._light_map_height
+                span._light_map_posx = primitive._light_map_posx
+                span._light_map_posy = primitive._light_map_posy
                 span.index = primitive._id;
                 this.AddSpan(span);
                 // Step
 
                 le.u += le.du;
                 le.v += le.dv;
+
+                le.lu += le.ldu;
+                le.lv += le.ldv;
+
                 le.w += le.dw;
                 le.x += le.dx;
                 le.alpha += le.dalpha;
@@ -644,6 +753,11 @@ class SpanRenderer {
 
                 re.u += re.du;
                 re.v += re.dv;
+
+                re.lu += re.ldu;
+                re.lv += re.ldv;
+
+
                 re.w += re.dw;
                 re.x += re.dx;
                 re.alpha += re.dalpha;
@@ -672,9 +786,9 @@ class SpanRenderer {
 
     AddSpan(span) {
         if (span.alpha < 1.0) {
-            this._transparent[span.y].push(span); // 🔥 transparent
+            this._transparent[span.y].push(span);
         } else {
-            this._line[span.y].push(span);        // 🔥 opaque
+            this._line[span.y].push(span);
         }
 
         this._m_spans_in++;

@@ -9,7 +9,6 @@
 
     }
 
-
     .container {
       overflow: hidden;
     }
@@ -37,11 +36,14 @@
   </p>
   <class id="render">
     <canvas id="canvas" width="320" height="200" style="border: 1px solid #aaaaaa"></canvas>
+    <canvas id="lightmap" width="320" height="200" style="border: 1px solid #aaaaaa"></canvas>
+    </select>
+
   </class>
   <br>
   <button onclick="LoadMap()">LoadMap</button>
   <button onclick="ClearDebugOut()">Clear console</button>
-  <button onclick="MachWas()">help</button>
+  <button onclick="LoadWad()">Load Wad</button>
 
   <p id="log">
   </p>
@@ -79,6 +81,7 @@
   <script src="./libs/MAP/Brush.js"></script>
   <script src="./libs/MAP/ConvexBuilder.js"></script>
   <script src="./libs/MAP/MAPReader.js"></script>
+  <script src="./libs/Wad3.js"></script>
 
   <script src="./libs/Frustum.js"></script>
   <script src="./libs/Camera.js"></script>
@@ -91,10 +94,14 @@
   <script src="./libs/BVH.js"></script>
   <script src="./libs/BSP.js"></script>
 
+
   <script src="./libs/Portal.js"></script>
   <script src="./libs/PVS.js"></script>
   <script src="./libs/TJunction.js"></script>
+  <script src="./libs/CellMerger.js"></script>
+  <script src="./libs/PVS.js"></script>
 
+  <script src="./libs/LightMap.js"></script>
   <script src="./libs/HZB.js"></script>
   <script src="./libs/Span.js"></script>
   <script src="./libs/Rasterizer.js"></script>
@@ -102,5 +109,6 @@
   <script src="./libs/MapCompiler.js"></script>
 
   <script src="./libs/Main.js"></script>
+
 
   <textarea id="debugout" name="debugout" rows="10" cols="100"></textarea>

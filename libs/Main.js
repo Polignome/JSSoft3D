@@ -6,7 +6,7 @@ var time;
 var frameTime;
 var canvas = new Canvas("canvas", width, height);
 var rasterizer = new Rasterizer(canvas);
-
+var biglightmap = new BigLightMap("lightmap", width, width);
 var keys = new Array(256);
 var prekeys = new Array(256);
 var polys = new Array();
@@ -26,7 +26,7 @@ var mouse_posy_div = 0;
 
 var test_cell = false;
 
-
+var m_wad = null;
 var test_pos = new Vector3()
 var m_wheel_delta = 1000000;
 var use_timer = false;
@@ -65,6 +65,7 @@ let test_polygon_list = null;
 let test_polygon = null;
 let m_port_mega = null;
 
+let hhh = 0;
 function InitCamera() {
 	let FOV = 60;
 	cam.aspect = (width * 1) / (height * 1);
@@ -103,6 +104,40 @@ function Render() {
 	spansout = rasterizer.SpansOut;
 
 }
+
+
+
+function AddOption(name) {
+	var opt = document.createElement("option");
+
+
+	opt.text = name;
+	opt.value = name;
+	document.getElementById("meineListbox").options.add(opt);
+
+}
+
+function LoadWad() {
+	var input = document.createElement('input');
+
+
+	input.type = 'file';
+	input.onchange = e => {
+		const file = e.target.files[0];
+		const reader = new FileReader();
+
+		reader.onload = function () {
+			const text = reader.result;
+			m_wad = new Wad3File(text);
+			AddOption("Doof");
+		};
+		reader.readAsText(file);
+	}
+
+	input.click();
+}
+
+
 
 
 function UpdateKeys() {
@@ -192,7 +227,7 @@ function Update() {
 		let index = GetIndexObjIndex(c);
 		//if (index < 0 || index >= test_polygon_list.length) 
 		test_polygon = test_polygon_list[index];
-		console.log(index, test_polygon, test_polygon_list.length)
+		//console.log(index, test_polygon, test_polygon_list.length)
 
 	}
 }
@@ -232,6 +267,11 @@ function GameLoop() {
 
 	canvas.DrawCoursor();
 	canvas.Redraw();
+	//    console.log(biglightmap.width,biglightmap.height);
+	//	biglightmap.SetClearColor(RGB(0, hhh++, 0));
+	//	biglightmap.Clear();
+
+	biglightmap.Redraw();
 
 
 
@@ -299,6 +339,9 @@ function LoadMap() {
 				  }
 			  */
 			if (m_map_compiler.bsp) {
+				biglightmap.Clear();
+				biglightmap.CalcLightmap(m_map_compiler.bsp.ExtractPrimsNoCopy(), m_map_compiler.lights);
+
 				pvs = m_map_compiler.pvs;
 				//	 m_merger= new CellMerger(m_map_compiler.bsp);
 
@@ -316,6 +359,26 @@ function LoadMap() {
 	input.click();
 }
 
+function LoadWad() {
+
+	var input = document.createElement('input');
+	input.type = 'file';
+	input.onchange = e => {
+		const file = e.target.files[0];
+		const reader = new FileReader();
+
+		reader.onload = function () {
+			const text = reader.result;
+			m_wad = new Wad3File(text);
+
+
+
+		};
+		reader.readAsArrayBuffer(file);
+	}
+
+	input.click();
+}
 
 
 function SaveHelp(x, y) {
@@ -354,118 +417,6 @@ function IsPortalCovered(port, hulls) {
 
 }
 
-function InitTest() {
-	return;
-	let polys = [];
-	let polys2 = [];
-	/*
-		polys.push(new Polygon([
-			new Vector3(-50, 50, 50),
-			new Vector3(50, 50, 50),
-			new Vector3(50, -50, 50),
-			new Vector3(-50, -50, 50)
-		]));
-	
-		// BACK (-Z)
-		polys.push(new Polygon([
-			new Vector3(50, 50, -50),
-			new Vector3(-50, 50, -50),
-			new Vector3(-50, -50, -50),
-			new Vector3(50, -50, -50)
-		]));
-	*/
-	// LEFT1 (-X)
-	polys.push(new Polygon([
-		new Vector3(-50, 50, -50),
-		new Vector3(-50, 50, 50),
-		new Vector3(-50, 0, 50),
-		new Vector3(-50, 0, -50)
-	]));
-
-	// LEFT2 (-X)
-	polys.push(new Polygon([
-		new Vector3(-50, 0, -50),
-		new Vector3(-50, 0, 50),
-		new Vector3(-50, -50, 50),
-		new Vector3(-50, -50, -50)
-	]));
-
-	// RIGHT (+X)
-	polys.push(new Polygon([
-		new Vector3(50, 50, 50),
-		new Vector3(50, 50, -50),
-		new Vector3(50, -50, -50),
-		new Vector3(50, -50, 50)
-	]));
-
-	// TOP (+Y)
-	polys.push(new Polygon([
-		new Vector3(-50, 50, -50),
-		new Vector3(50, 50, -50),
-		new Vector3(50, 50, 50),
-		new Vector3(-50, 50, 50)
-	]));
-
-	// BOTTOM (-Y)
-	polys.push(new Polygon([
-		new Vector3(-50, -50, 50),
-		new Vector3(50, -50, 50),
-		new Vector3(50, -50, -50),
-		new Vector3(-50, -50, -50)
-	]));
-
-	m_port_mega = new Portal([
-		new Vector3(50, 50, 0),
-		new Vector3(-50, 50, 0),
-		new Vector3(-50, -50, 0),
-		new Vector3(50, -50, 0)
-	]);
-
-
-
-
-
-
-
-	let hulls = [];
-	//port=new Portal()
-	let id = 0;
-	for (let p = 0; p < polys.length; p++) {
-		polys[p].re
-		polys[p]._id = (id++);
-		polys[p].render_type = POLY_PERSPECTIVE_TEXTURED;
-		polys[p].calcPlane();
-		polys[p].setWorldTexture(0.01, 0.01);
-		polys[p]._texture = global_texture_manager.GetTextureByName("Texture1x1we");
-		console.log("Poly ", id)
-		hulls.push(new PolygonHull(polys[p]))
-	}
-
-	/*
-	polys[0]._texture = global_texture_manager.GetTextureByName("Texture1x1");
-	polys[1]._texture = global_texture_manager.GetTextureByName("Texture2x1");
-	polys[2]._texture = global_texture_manager.GetTextureByName("Texture3x1");
-	polys[3]._texture = global_texture_manager.GetTextureByName("Texture2x1");
-	//   polys[4]._texture = global_texture_manager.GetTextureByName("Texture2x2");
-	//	polys[5]._texture = global_texture_manager.GetTextureByName("Texture2x3");
-*/
-	rasterizer.AddPrimitive(polys);
-	rasterizer.BuildBVH();
-
-
-	let help = new PolygonHull(polys[0]);
-	for (let i = 0; i < m_port_mega.verts.length; i++) {
-		let j = (i + 1) % m_port_mega.verts.length;
-		let he = help.clipSegmentOutsideHull([m_port_mega.verts[i], m_port_mega.verts[j]])
-
-
-	}
-
-
-	console.log("Test Portal", IsPortalCovered(m_port_mega, hulls));
-
-
-}
 
 
 
@@ -485,8 +436,8 @@ function Init() {
 
 	let v0 = new Array(new Vector3(0, 0, 0), new Vector3(10, 0, 0), new Vector3(10, 10, 0));
 
-
-
+	biglightmap.SetClearColor(RGB(0, 100, 0));
+	biglightmap.Clear();
 
 	canvas.Canvas.addEventListener("mouseleave", (event) => {
 		mouse_key = 0;
@@ -776,7 +727,7 @@ function Init() {
 	meter = new FPSMeter(document.getElementById('target'), { graph: 2, heat: 1 });
 	if (use_timer) setInterval(myTimer, 30);
 
-	InitTest();
+
 
 
 

@@ -82,7 +82,7 @@ class Rasterizer {
 
     this._BeamTree = new BeamTree();
 
-
+    this.light_map = null;
     this._dummy_texture = new Texture();
 
     this.xform = new Matrix4x4();
@@ -149,7 +149,7 @@ class Rasterizer {
   }
 
 
-  Start(camera) {
+  Start(camera, ligth_map = null) {
 
     if (this._zbuffer == null) {
       console.log("zbuffer = null")
@@ -163,7 +163,7 @@ class Rasterizer {
 
     }
 
-
+    this.light_map = ligth_map;
     this._hzbuffer.setBaseLevel(this._zbuffer);
     this._hzbuffer.build();
 
@@ -376,6 +376,9 @@ class Rasterizer {
       sverts[j].u = verts[j].texture.x * ow;
       sverts[j].v = verts[j].texture.y * ow;
 
+      sverts[j].lu = verts[j].light_texture.x * ow;
+      sverts[j].lv = verts[j].light_texture.y * ow;
+
       if (j < verts.length - 1) sverts[j].next = sverts[j + 1];
     }
     //_sverts[verts.length-1].next = undefined;
@@ -545,9 +548,6 @@ class Rasterizer {
   }
 
   ZBufferToScreenOLD(posx = 0, posy = 0, scale = 1) {
-
-
-
     let pp = 0;
     for (let l = 0; l < this._hzbuffer.levels.length; l++) {
       let level = this._hzbuffer.levels[l];
@@ -561,30 +561,19 @@ class Rasterizer {
       }
       pp += level.w;
     }
-
-
   }
 
   NBufferToScreen() {
     let i = 0;
     for (let y = 0; y < this.height(); y++) {
       for (let x = 0; x < this.width(); x++) {
-
         const r = this._nbuffer[(i++)] * 128 + 128;
         const g = this._nbuffer[(i++)] * 128 + 128;
         const b = this._nbuffer[(i++)] * 128 + 128;
-
-
         this._canvas.PutPixel(x, y, RGBA(r | 0, g | 0, b | 0, 0xff));
-
       }
     }
-
   }
-
-
-
-
 
 
   BuildBVH() {

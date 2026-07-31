@@ -9,9 +9,8 @@ class PrimitiveBase {
         this._can_not_be_splitter = false;
         this._potential_portal = true;
         this._create_from_aabb = false;
+
     }
-
-
 
 
 
@@ -81,6 +80,7 @@ class Polygon extends PrimitiveBase {
         // this._verts= new Array();
         // this._sverts= new Array();
         this._texture = null;
+        this._ltexture = null;
         this._plane = new Ray(3);
         this._center = new Vector3();
         this._recal_plane = true;
@@ -91,7 +91,12 @@ class Polygon extends PrimitiveBase {
         this._id = -1;
         this._node_id = -1;
         this._leaf_id = -1;
-
+        this._light_map_posx = 0;
+        this._light_map_posy = 0;
+        this._light_map_width = 0;
+        this._light_map_height = 0;
+        this.m_edge1 = new Vector3();
+        this.m_edge2 = new Vector3();
         if (p instanceof Polygon) {
 
 
@@ -162,6 +167,61 @@ class Polygon extends PrimitiveBase {
         }
 
     }
+
+    GetAlignement() {
+        let normal = this._plane.normal;
+        let norm = Math.abs(normal.x);
+        if (norm < Math.abs(normal.y)) return 1;
+        if (norm < Math.abs(normal.z)) return 2
+        return 0;
+    }
+
+
+    Get2DBBox() {
+
+        let axis = this.GetAlignement();
+
+        let uumin = 0;
+        let uumax = 0;
+        let vvmin = 0;
+        let vvmax = 0;
+
+
+        for (let i = 0; i < this._verts.length; i++) {
+            let u = 0;
+            let v = 0;
+            switch (axis) {
+                case 0:
+                    u = this._verts[i].world.y;
+                    v = this._verts[i].world.z;
+                    break;
+                case 1:
+                    u = this._verts[i].world.x;
+                    v = this._verts[i].world.z;
+                    break;
+                case 2:
+                    u = this._verts[i].world.x;
+                    v = this._verts[i].world.y;
+                    break;
+            }
+
+            if (i === 0) {
+                uumin = u;
+                uumax = u;
+                vvmin = v;
+                vvmax = v;
+            } else {
+                uumin = Math.min(uumin, u);
+                vvmin = Math.min(vvmin, v);
+                uumax = Math.max(uumax, u);
+                vvmax = Math.max(vvmax, v);
+            }
+        }
+
+        return new AABB2D(new Vector2(uumin, vvmin), new Vector2(uumax, vvmax));
+
+    }
+
 
 
     Area() {
@@ -253,11 +313,12 @@ class Polygon extends PrimitiveBase {
         let t2 = v1.world.sub(v0.world);
 
         const percent = t1.length() / t2.length();
-        vn.normal = v0.normal.sub(v1.normal).mul(percent);
-        vn.texture = v0.texture.sub(v1.texture).mul(percent);
-        vn.color = v0.color.sub(v1.color).mul(percent);
-        vn.light = v0.light.sub(v1.light).mul(percent);
-        vn.alpha = (v0.alpha - v1.alpha) * (percent);
+        vn.normal = v0.normal.add(v1.normal.sub(v0.normal).mul(percent));
+        vn.texture = v0.texture.add(v1.texture.sub(v0.texture).mul(percent));
+        vn.light_texture = v0.light_texture.add(v1.light_texture.sub(v0.light_texture).mul(percent));
+        vn.color = v0.color.add(v1.color.sub(v0.color).mul(percent));
+        vn.light = v0.light.add(v1.light.sub(v0.light).mul(percent));
+        vn.alpha = v0.alpha + (v1.alpha - v0.alpha) * (percent);
         //        console.log(pos.x, pos.y, pos.z, "-> ", this._id)
 
 
@@ -335,11 +396,23 @@ class Polygon extends PrimitiveBase {
         this._node_id = p._node_id;
         this._id = p._id;
         this._texture = p._texture;
-
+        this._ltexture = p._ltexture;
+        this._light_map_posx = p._light_map_posx;
+        this._light_map_posy = p._light_map_posy;
+        this._light_map_width = p._light_map_width;
+        this._light_map_height = p._light_map_height;
+        this.m_edge1 = new Vector3(p.m_edge1);
+        this.m_edge2 = new Vector3(p.m_edge2);
+        this.m_uvvector = new Vector3();
     }
+
+    get uvvector() { return this.m_uvvector; }
+    set uvvector(a) { this.m_uvvector.x = a.x; this.m_uvvector.y = a.y; this.m_uvvector.z = a.z; }
+
     clalcAABB() {
         return new AABB(this);
     }
+
 
 
     setPlanarTexture(realx = 0, realy = 0, realw = 1, realh = 1) {
@@ -427,6 +500,77 @@ class Polygon extends PrimitiveBase {
 
 
 
+        }
+
+    }
+    setPlanarLightTexture(realx = 0, realy = 0, realw = 1, realh = 1) {
+        let ali = this.plane.GetAlignement();
+        let umin = 0;
+        let umax = 0;
+        let vmin = 0;
+        let vmax = 0;
+
+        for (let i = 0; i < this._verts.length; i++) {
+            if (ali === 0) {
+
+                this._verts[i].light_texture.x = this._verts[i].world.y;
+                this._verts[i].light_texture.y = this._verts[i].world.z;
+
+                if (i === 0) {
+                    umin = umax = this._verts[i].light_texture.x;
+                    vmin = vmax = this._verts[i].light_texture.y;
+                } else {
+                    umin = Math.min(umin, this._verts[i].light_texture.x);
+                    umax = Math.max(umax, this._verts[i].light_texture.x);
+                    vmin = Math.min(vmin, this._verts[i].light_texture.y);
+                    vmax = Math.max(vmax, this._verts[i].light_texture.y);
+
+                }
+
+            }
+            else if (ali === 1) {
+                this._verts[i].light_texture.x = this._verts[i].world.x;
+                this._verts[i].light_texture.y = this._verts[i].world.z;
+
+
+                if (i === 0) {
+                    umin = umax = this._verts[i].texture.x;
+                    vmin = vmax = this._verts[i].texture.y;
+                } else {
+                    umin = Math.min(umin, this._verts[i].light_texture.x);
+                    umax = Math.max(umax, this._verts[i].light_texture.x);
+                    vmin = Math.min(vmin, this._verts[i].light_texture.y);
+                    vmax = Math.max(vmax, this._verts[i].light_texture.y);
+
+                }
+
+            }
+            else {
+                this._verts[i].light_texture.x = this._verts[i].world.x;
+                this._verts[i].light_texture.y = this._verts[i].world.y;
+
+                if (i === 0) {
+                    umin = umax = this._verts[i].texture.x;
+                    vmin = vmax = this._verts[i].texture.y;
+                } else {
+                    umin = Math.min(umin, this._verts[i].light_texture.x);
+                    umax = Math.max(umax, this._verts[i].light_texture.x);
+                    vmin = Math.min(vmin, this._verts[i].light_texture.y);
+                    vmax = Math.max(vmax, this._verts[i].light_texture.y);
+
+                }
+            }
+
+        }
+        let udelta = Math.abs(umax - umin);
+        let vdelta = Math.abs(vmax - vmin);
+
+
+
+
+        for (let i = 0; i < this._verts.length; i++) {
+            this._verts[i].light_texture.x = (((this._verts[i].light_texture.x + umin) / udelta) * realw + realx);
+            this._verts[i].light_texture.y = (((this._verts[i].light_texture.y + vmin) / vdelta) * realh + realy);
         }
 
     }
@@ -604,6 +748,9 @@ class Polygon extends PrimitiveBase {
             this._sverts[j].u = this.verts[j].texture.x * ow;
             this._sverts[j].v = this.verts[j].texture.y * ow;
 
+            this._sverts[j].lu = this.verts[j].light_texture.x * ow;
+            this._sverts[j].lv = this.verts[j].light_texture.y * ow;
+
             this._sverts[j]._normal.x = this.verts[j]._normal.x * ow;
             this._sverts[j]._normal.y = this.verts[j]._normal.y * ow;
             this._sverts[j]._normal.z = this.verts[j]._normal.z * ow;
@@ -682,6 +829,7 @@ class Polygon extends PrimitiveBase {
     SetAlpha(alpha) {
         for (let v of this.verts) v.alpha = alpha;
     }
+
     SetTestColor() {
         var a = new Vector3(128, 128, 128);
 
@@ -864,6 +1012,7 @@ class Polygon extends PrimitiveBase {
 
 
                 v.texture = new Vector2(v0.texture.x + (scaled * (v1.texture.x - v0.texture.x)), v0.texture.y + (scaled * (v1.texture.y - v0.texture.y)));
+                v.light_texture = new Vector2(v0.light_texture.x + (scaled * (v1.light_texture.x - v0.light_texture.x)), v0.light_texture.y + (scaled * (v1.light_texture.y - v0.light_texture.y)));
 
                 npoly.AddVert(v);
             }
@@ -922,8 +1071,11 @@ class Polygon extends PrimitiveBase {
 
 
 
+                v.light_texture = new Vector2(v0.light_texture.x + (scaled * (v1.light_texture.x - v0.light_texture.x)),
+                    v0.light_texture.y + (scaled * (v1.light_texture.y - v0.light_texture.y)));
 
-                v.texture = new Vector2(v0.texture.x + (scaled * (v1.texture.x - v0.texture.x)), v0.texture.y + (scaled * (v1.texture.y - v0.texture.y)));
+                v.texture = new Vector2(v0.texture.x + (scaled * (v1.texture.x - v0.texture.x)),
+                    v0.texture.y + (scaled * (v1.texture.y - v0.texture.y)));
 
                 npoly.AddVert(v);
             }
@@ -985,6 +1137,8 @@ class Polygon extends PrimitiveBase {
                 help = true;
 
                 v.texture = new Vector2(v0.texture.x + (scaled * (v1.texture.x - v0.texture.x)), v0.texture.y + (scaled * (v1.texture.y - v0.texture.y)));
+                v.light_texture = new Vector2(v0.light_texture.x + (scaled * (v1.light_texture.x - v0.light_texture.x)),
+                    v0.light_texture.y + (scaled * (v1.light_texture.y - v0.light_texture.y)));
 
                 npoly.AddVert(v);
             }
@@ -1055,6 +1209,8 @@ class Polygon extends PrimitiveBase {
                     (v0.color.z + (scaled * (v1.color.z - v0.color.z))));
 
 
+                v.light_texture = new Vector2(v0.light_texture.x + (scaled * (v1.light_texture.x - v0.light_texture.x)),
+                    v0.light_texture.y + (scaled * (v1.light_texture.y - v0.light_texture.y)));
 
                 v.texture = new Vector2(v0.texture.x + (scaled * (v1.texture.x - v0.texture.x)), v0.texture.y + (scaled * (v1.texture.y - v0.texture.y)));
                 if (USE_AXIS_SORT_AND_VECTOR_SNAP) v.world.snap();
@@ -1077,14 +1233,6 @@ class Polygon extends PrimitiveBase {
     }
 
 
-
-
-
-
-
-
-
-
     ClipByFrustum(frustum) {
 
         var p = this;
@@ -1104,9 +1252,142 @@ class Polygon extends PrimitiveBase {
         return [p, clip];
     }
 
+    CalcLightMapParm(vscale = 1.0) {
+
+        let ali = this.plane.GetAlignement();
+        let umin = Infinity;
+        let umax = -Infinity;
+        let vmin = Infinity;
+        let vmax = -Infinity;
+
+        for (let v of this.vertices) {
+            switch (ali) {
+                case 0:
+                    umax = Math.max(umax, v.world.y);
+                    vmax = Math.max(vmax, v.world.y);
+                    umin = Math.min(umin, v.world.z);
+                    vmin = Math.min(vmin, v.world.z);
+                    break;
+
+                case 1:
+                    umax = Math.max(umax, v.world.x);
+                    vmax = Math.max(vmax, v.world.x);
+                    umin = Math.min(umin, v.world.z);
+                    vmin = Math.min(vmin, v.world.z);
+                    break;
+
+                case 2:
+                    umax = Math.max(umax, v.world.x);
+                    vmax = Math.max(vmax, v.world.x);
+                    umin = Math.min(umin, v.world.y);
+                    vmin = Math.min(vmin, v.world.y);
+                    break;
+            }
+        }
+
+
+        let tumin = umin * vscale
+        let tvmin = vmin * vscale
+        let tumax = umax * vscale
+        let tvmax = vmax * vscale
+
+        let x = 0; let y = 0; let z = 0;
+        let norm = this.plane.normal;
+        let d = this.plane.D;
+        let vect2, vect1;
+
+        switch (ali) {
+            case 0:
+                x = (norm.z * tumin + norm.y * tvmin + d) / norm.x
+                this.m_uvvector = new Vector3(x, tvmin, tumin)
+                x = (norm.z * tumax + norm.y * tvmin + d) / norm.x
+                vect1 = new Vector3(x, tvmin, tumax)
+                x = (norm.z * tumin + norm.y * tvmax + d) / norm.x
+                vect2 = new Vector3(x, tvmax, tumin)
+                break;
+
+            case 1:
+                y = (norm.x * tumin + norm.z * tvmin + d) / norm.y
+                this.m_uvvector = new Vector3(-tumin, y, tvmin)
+                y = (norm.x * tumax + norm.z * tvmin + d) / norm.y
+                vect1 = new Vector3(tumax, y, tvmin)
+                y = (norm.x * tumin + norm.z * tvmax + d) / norm.y
+                vect2 = new Vector3(tumin, y, tvmax)
+                break;
+
+            case 2:
+                z = (norm.x * umin + norm.y * vmin + d) / norm.z
+                this.m_uvvector = new Vector3(-umin, vmin, z)
+                z = (norm.x * umax + norm.y * vmin + d) / norm.z
+                vect1 = new Vector3(umax, vmin, z)
+                z = (norm.x * umin + norm.y * vmax + d) / norm.z
+                vect2 = new Vector3(umin, vmax, z)
+
+
+
+                break;
+        }
+        this.m_edge1 = vect1.sub(this.m_uvvector);
+        this.m_edge2 = vect2.sub(this.m_uvvector);
+
+        // console.log("Edge1    :", this.edge1.x, this.edge1.y, this.edge1.z)
+        // console.log("Edge2    :", this.edge2.x, this.edge2.y, this.edge2.z)
+        // console.log("uvvector :", this.uvvector.x, this.uvvector.y, this.uvvector.z)
+
+    }
+
+
+    get edge1() { return this.m_edge1; }
+    get edge2() { return this.m_edge2; }
+
+    set edge1(a) { this.m_edge1.x = a.x; this.m_edge1.y = a.y; this.m_edge1.z = a.z; }
+    set edge2(a) { this.m_edge2.x = a.x; this.m_edge2.y = a.y; this.m_edge2.z = a.z; }
+
+
+
+    RayPolygonDistance(start, end) {
+        const EPSILON = 1e-6;
+
+        if (this.vertices.length < 3)
+            return -1;
+
+        const dir = end.sub(start);
+
+        // Ebenennormale
+        const normal = this.plane.normal;
+
+        const denom = normal.dot(dir);
+
+        // Parallel
+        if (Math.abs(denom) < EPSILON)
+            return -1;
+
+        // Parameter auf dem Strahl
+        const t = normal.dot(this.vertices[0].world.sub(start)) / denom;
+
+        // Außerhalb der Strecke Start-Ende
+        if (t < 0 || t > 1)
+            return -1;
+
+        const hit = start.add(dir.mul(t));
+
+        // Inside-Test
+        for (let i = 0; i < this.vertices.length; i++) {
+            const a = this.vertices[i].world;
+            const b = this.vertices[(i + 1) % this.vertices.length].world;
+
+            const edge = b.sub(a);
+            const toPoint = hit.sub(a);
+
+            if (edge.cross(toPoint).dot(normal) < -EPSILON) return -1;
+        }
+        return hit.sub(start).length();
+
+    }
+
+
 
 }
-
 class IndexedObject extends PrimitiveBase {
     constructor(a = undefined, b = undefined, indecesPerPolygon = 0) {
         super();
@@ -1183,7 +1464,6 @@ class IndexedObject extends PrimitiveBase {
         return p;
     }
 
+
+
 }
-
-
-

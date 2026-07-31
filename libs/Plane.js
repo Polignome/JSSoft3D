@@ -41,10 +41,19 @@ function GetACopy(v) {
 
 
 class Ray {
-    constructor(N = 3) {
+    constructor(N = 3, M = 0) {
         this._nCalculated = false;
         this._lCalculated = false;
         this._dCalculated = false;
+
+        if (N instanceof Vector3 && M instanceof Vector3) {
+            this._origin = new Vector3(N);
+            this._vector = M.sub(N);
+            this._normal = new Vector3()
+            return;
+        }
+
+
 
         if (N instanceof Ray) {
 
@@ -457,6 +466,7 @@ class Ray {
         v._world = new Vector3(a.world.x + (scaled * (b.world.x - a.world.x)), a.world.y + (scaled * (b.world.y - a.world.y)), a.world.z + (scaled * (b.world.z - a.world.z)));
         v._color = new Vector3(a.color.x + (scaled * (b.color.x - a.color.x)), a.color.y + (scaled * (b.color.y - a.color.y)), a.color.z + (scaled * (b.color.z - a.color.z)));
         v._texture = new Vector2(a.texture.x + (scaled * (b.texture.x - a.texture.x)), v.texture.y = a.texture.y + (scaled * (b.texture.y - a.texture.y)));
+        v._light_texture = new Vector2(a.light_texture.x + (scaled * (b.light_texture.x - a.light_texture.x)), v.light_texture.y = a.light_texture.y + (scaled * (b.light_texture.y - a.light_texture.y)));
 
         return v;
     }

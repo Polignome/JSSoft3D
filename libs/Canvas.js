@@ -141,7 +141,7 @@ async function saveBMPAsync(filename, width, height, rgbaBuffer) {
 
 
 class Rect {
-  constructor(left = null, top = null, right = null, bottom = null) {
+  constructor(left = undefined, top = undefined, right = undefined, bottom = undefined) {
     this._top = -1;
     this._left = -1;
     this._bottom = -1;
@@ -152,7 +152,8 @@ class Rect {
   }
 
 
-  Set(left = null, top = null, rigth = null, bottom = null) {
+  Set(left = undefined, top = undefined, right = undefined, bottom = undefined) {
+
     if (left instanceof Rect) {
       this._top = left.top;
       this._bottom = left.bottom;
@@ -164,7 +165,7 @@ class Rect {
     }
     if ((typeof left === "number") &&
       (typeof top === "number") &&
-      (typeof rigth === "number") &&
+      (typeof right === "number") &&
       (typeof bottom === "number")) {
       this._top = top;
       this._bottom = bottom;
@@ -201,7 +202,7 @@ class Rect {
 class Canvas {
 
 
-  constructor(name, width, height) {
+  constructor(name, width, height, num_buffers = 2) {
     this._canvas = undefined;
     this._ctx = undefined;
     this._imageData = undefined;
@@ -210,15 +211,17 @@ class Canvas {
     this._active_buffer_index = 0;
     this._active_buffer_ptr = undefined;
     this._clear_color = RGBA(0, 0, 0, 0xff);
-    this.Init(name, width, height);
+    this.Init(name, width, height, num_buffers);
     this._mouse_x = 0;
     this._mouse_y = 0;
+    this._num_buffers = num_buffers;
 
     this._canvas.addEventListener("mousemove", (ev) => {
       let cols = canvas.width;
       let { offsetX, offsetY } = ev;
       this._mpx = offsetX;
       this._mpy = offsetY;
+      this.PutPixel(offsetX, offsetY, RGB(255, 255, 0))
     });
   }
 
@@ -410,7 +413,10 @@ class Canvas {
 
 
   Clear() {
-    if (this._active_buffer_ptr === undefined) return;
+    if (this._active_buffer_ptr === undefined) {
+      console.log("this._active_buffer_ptr === undefined");
+      return;
+    }
     this._active_buffer_ptr.fill(this._clear_color);
   }
 
@@ -421,15 +427,17 @@ class Canvas {
   }
 
 
-  Init(name, width, height) {
+  Init(name, width, height, num_buffers = 2) {
 
+    this._num_buffers = num_buffers;
     this._canvas = document.getElementById(name);
     this._ctx = this._canvas.getContext("2d", { willReadFrequently: true });
     this._canvas.width = width;
     this._canvas.height = height;
     this._imageData = this._ctx.getImageData(0, 0, this._canvas.width, this._canvas.height);
-    this._buffer[0] = new Uint32Array(this._canvas.width * this._canvas.height);
-    this._buffer[1] = new Uint32Array(this._canvas.width * this._canvas.height);
+    for (let i = 0; i < this._num_buffers; i++)
+      this._buffer[i] = new Uint32Array(this._canvas.width * this._canvas.height);
+
     this._active_buffer_index = 0;
     this._active_buffer_ptr = this._buffer[this._active_buffer_index];
 
@@ -440,7 +448,7 @@ class Canvas {
   }
 
   flip() {
-    this._active_buffer_index != this._active_buffer_index;
+    this._active_buffer_index = (this._active_buffer_index + 1) % this._num_buffers;
     this._active_buffer_ptr = this._buffer[this._active_buffer_index];
   }
 
@@ -459,6 +467,11 @@ class Canvas {
   PutPixelRaw(x, y, color) {
 
     this._active_buffer_ptr[x + y * this.width] = color;
+
+  }
+  GetPixel(x, y) {
+
+    return this._active_buffer_ptr[x + y * this.width];
 
   }
 

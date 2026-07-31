@@ -1,3 +1,123 @@
+class AABB2D
+{
+constructor(a = undefined, b = undefined) {
+
+        this._recalc = true;
+        if (a instanceof Vector2 && b instanceof Vector2) {
+            this._min = new Vector2(a);
+            this._max = new Vector2(b);
+            return;
+        }
+
+
+        this._min = new Vector2();
+        this._max = new Vector2();
+        this.reset();
+
+        this.Add(a);
+   }
+
+
+   top() {
+    return this.min.y;
+   }
+   bottom() {
+    return this.max.y;
+   }
+   left() {
+    return this.min.x;
+   }
+   right() {
+    return this.max.x;
+   }
+
+   width() {
+       return this.max.x - this.min.x 
+       
+   }
+
+   height() {
+      return this.max.y - this.min.y    
+   }
+       Add(a) {
+
+        if (a instanceof Vector2) {
+            const min = this._min;
+            const max = this._max;
+
+            if (a.x < min.x) this._min.x = a.x;
+            if (a.y < min.y) this._min.y = a.y;
+            
+
+            if (a.x > max.x) this._max.x = a.x;
+            if (a.y > max.y) this._max.y = a.y;
+            
+
+
+            return;
+        }
+
+        
+        if (a instanceof AABB2D) {
+            this.Add(a._min);
+            this.Add(a._max);
+            return;
+        }
+
+        if (Array.isArray(a)) {
+            for (let i = 0; i < a.length; i++) {
+                this.Add(a[i]);
+            }
+            return;
+        }
+    }
+
+
+    reset() {
+        this._min.x = Infinity;
+        this._min.y = Infinity;
+
+        this._max.x = -Infinity;
+        this._max.y = -Infinity;
+    }
+
+    
+    center(out = new Vector2()) {
+        out.x = (this._min.x + this._max.x) * 0.5;
+        out.y = (this._min.y + this._max.y) * 0.5;
+        return out;
+    }
+
+    size(out = new Vector2()) {
+        out.x = this._max.x - this._min.x;
+        out.y = this._max.y - this._min.y;
+        return out;
+    }
+
+    len() {
+        return this.max.sub(this.min).length();
+
+    }
+
+    get min() { return new Vector2(this._min); }
+    get max() { return new Vector2(this._max); }
+
+  getAABBCorners() {
+
+
+ return [
+            new Vector3(min.x, min.y),
+            new Vector3(max.x, min.y),
+            new Vector3(max.x, max.y),
+            new Vector3(min.x, max.y)
+        ];
+
+
+  }
+
+}
+
+
 
 
 class AABB {
@@ -19,43 +139,6 @@ class AABB {
 
 
 
-    }
-
-        SplitAABB(plane) {
-        let front = new AABB(this);
-        let back = new AABB(this);
-
-        // dominante Achse bestimmen
-        let n = plane.normal;
-
-        if (Math.abs(n.x) > Math.abs(n.y) &&
-            Math.abs(n.x) > Math.abs(n.z)) {
-            front.min.x = plane.origin.x;
-            back.max.x = plane.origin.x;
-        }
-        else
-            if (Math.abs(n.y) > Math.abs(n.z)) {
-                front.min.y = plane.origin.y;
-                back.max.y = plane.origin.y;
-            }
-            else {
-                front.min.z = plane.origin.z;
-                back.max.z = plane.origin.z;
-            }
-
-        return [front, back];
-    }
-
-    SurfaceArea() {
-        const dx = this.max.x - this.min.x;
-        const dy = this.max.y - this.min.y;
-        const dz = this.max.z - this.min.z;
-
-        return 2 * (
-            dx * dy +
-            dx * dz +
-            dy * dz
-        );
     }
 
     Add(a) {
@@ -358,6 +441,44 @@ class AABB {
 
 
     }
+
+    SplitAABB(plane) {
+        let front = new AABB(this);
+        let back = new AABB(this);
+
+        // dominante Achse bestimmen
+        let n = plane.normal;
+
+        if (Math.abs(n.x) > Math.abs(n.y) &&
+            Math.abs(n.x) > Math.abs(n.z)) {
+            front.min.x = plane.origin.x;
+            back.max.x = plane.origin.x;
+        }
+        else
+            if (Math.abs(n.y) > Math.abs(n.z)) {
+                front.min.y = plane.origin.y;
+                back.max.y = plane.origin.y;
+            }
+            else {
+                front.min.z = plane.origin.z;
+                back.max.z = plane.origin.z;
+            }
+
+        return [front, back];
+    }
+
+    SurfaceArea() {
+        const dx = this.max.x - this.min.x;
+        const dy = this.max.y - this.min.y;
+        const dz = this.max.z - this.min.z;
+
+        return 2 * (
+            dx * dy +
+            dx * dz +
+            dy * dz
+        );
+    }
+
 
     ClipPolygon(polygon) {
         let a = new Vector3(this._min.x, this._min.y, this._min.z);

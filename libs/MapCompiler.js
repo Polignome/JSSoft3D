@@ -19,6 +19,7 @@ class MapCompiler {
     this.polylist = null;
     this.bsp = null;
     this.pvs = null;
+    this.lights = null;
   }
 
   DebugOutDummy(data) { }
@@ -27,6 +28,7 @@ class MapCompiler {
     this.brush_list = null;
     this.bsp = null;
     this.pvs = null;
+    this.lights = null;
     var debug = this.DebugOutDummy;
     var debug = DebugOut;
 
@@ -36,6 +38,7 @@ class MapCompiler {
       this.map = mapparser.LoadMapFromString(map_string);
       if (!this.map) { debug(" ...Error\n"); return COMPILER_MAP_READER_ERROR; }
       this.brush_list = this.map.GetBrushList();
+      this.lights = this.map.GetLightList();
       if (this.brush_list.length <= 0) { debug(" ...Error\n"); return COMPILER_MAP_READER_ERROR; }
       debug("...Ok\n");
       debug("    |- Num Brushes...:" + this.brush_list.length + "\n");
@@ -85,7 +88,10 @@ class MapCompiler {
       this.bsp.BuildPortals();
       //this.bsp.Rebuild();
       NonVisPolygonsRemover.Remove(this.bsp);
+
+
       this.polylist = this.bsp.ExtractPrims();
+
       var polys_out = this.polylist.length;
 
 
@@ -104,13 +110,6 @@ class MapCompiler {
       debug("    |- Num Portals...:" + this.bsp._portal_list.length + "\n");
     }
 
-    debug("Rebuild BSP ........................: ");
-
-    this.bsp.Rebuild();
-    debug("...Ok\n");
-    debug("    |- Num Leafs.....:" + this.bsp._leaf_list.length + "\n");
-    debug("    |- Num Nodes.....:" + this.bsp._node_list.length + "\n");
-    debug("    |- Num Portals...:" + this.bsp._portal_list.length + "\n");
 
     debug("TJunction ..........................: ");
     let tj = new TJunction();
@@ -124,8 +123,12 @@ class MapCompiler {
     debug("...Ok\n");
 
     debug("PVS optimze.........................: ");
-    //this.pvs.Optimize();
+    this.pvs.Optimize();
     debug("...Ok\n");
+    debug("    |- Num Cells in..:" + this.pvs.start + "\n");
+    debug("    |- Num Cells out.:" + this.pvs._cells.length + "\n");
+    debug("    |- Num Portals...:" + this.pvs._portals.length + "\n");
+
 
     return COMPILER_NO_ERRORS;
   }

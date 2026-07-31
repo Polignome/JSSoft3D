@@ -2,9 +2,9 @@ class Vert {
 
     /*
     set texture(a) { this._texture = new Vector2(a); }
-    set world(a) { this._world = new Vector3(a); }
-    set screen(a) { this._screen = new Vector4(a); }
-    set color(a) { this._color = new Vector3(a); }
+    set world(a)   { this._world = new Vector3(a); }
+    set screen(a)  { this._screen = new Vector4(a); }
+    set color(a)   { this._color = new Vector3(a); }
     set normal(a) { this._normal = new Vector3(a); }
     set light(a) { this._light = new Vector3(a); }
     */
@@ -15,6 +15,7 @@ class Vert {
     set color(a) { this._color.x = a.x; this._color.y = a.y; this._color.z = a.z; }
     set normal(a) { this._normal.x = a.x; this._normal.y = a.y; this._normal.z = a.z; }
     set light(a) { this._light.x = a.x; this._light.y = a.y; this._light.z = a.z; }
+    set light_texture(a) { this._light_texture.x = a.x; this._light_texture.y = a.y; }
 
     set alpha(a) { this._aplha = a; }
     get alpha() { return this._aplha; }
@@ -25,6 +26,7 @@ class Vert {
     get screen() { return this._screen; }
     get normal() { return this._normal; }
     get light() { return this._light; }
+    get light_texture() { return this._light_texture; }
 
     scale(v) {
         let out = new Vert(this);
@@ -46,11 +48,13 @@ class Vert {
             this._color = new Vector3(v.color);
             this._normal = new Vector3(v.normal);
             this._light = new Vector3(v.light);
+            this._light_texture = new Vector2(v.light_texture);
             this._aplha = v.alpha;
             return;
         }
 
         if (v instanceof Vector3) {
+            this._light_texture = new Vector2();
             this._texture = new Vector2();
             this._world = new Vector3(v);
             this._screen = new Vector4();
@@ -61,6 +65,7 @@ class Vert {
             return;
         }
 
+        this._light_texture = new Vector2();
         this._texture = new Vector2();
         this._world = new Vector3();
         this._screen = new Vector4();
@@ -95,6 +100,8 @@ class SVec {
             this._w = x.w;
             this._u = x.u;
             this._v = x.v;
+            this._lu = x.lu;
+            this._lv = x.lv;
             this._iy = x.iy;
             this._color = new Vector3(x.color);
             this._light = new Vector3(x.light);
@@ -111,6 +118,8 @@ class SVec {
         this._w = w;
         this._u = u;
         this._v = v;
+        this._lu = u;
+        this._lv = v;
         this._iy = iy;
         this._aplha = 1.0;
     }
@@ -139,6 +148,9 @@ class SVec {
 
     set u(a) { this._u = a; }
     set v(a) { this._v = a; }
+    set lu(a) { this._lu = a; }
+    set lv(a) { this._lv = a; }
+
     set iy(a) { this._iy = a; }
 
 
@@ -152,6 +164,10 @@ class SVec {
 
     get u() { return this._u; }
     get v() { return this._v; }
+
+    get lu() { return this._lu; }
+    get lv() { return this._lv; }
+
     get iy() { return this._iy; }
 }
 

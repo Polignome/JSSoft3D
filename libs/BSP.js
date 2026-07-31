@@ -58,10 +58,11 @@ class BSPNode {
         this._contents = -1;
         this.finde = this.Finde_besten_Splitter3;
         this._outside = false;
+        this._tree = tree;
         if (parent == null) this._node_type = BSP_ROOD;
 
         this._aabb.Add(polygons);
-        let best_splitter = this.Finde_besten_Splitter(polygons);
+        let best_splitter = this.Finde_besten_Splitter(polygons, this._aabb);
 
         //// BINGO THIS IS A LEAF  
         if (best_splitter === -1 || makesolid) {
@@ -85,8 +86,12 @@ class BSPNode {
             } else {
                 this._node_type = BSP_SUBLEAF;
                 this._leaf = parent._leaf;
+                this._leaf_id = parent._leaf_id;
                 this.Makesolid(tree, polygons, this);
             }
+
+            this._node_id = -tree._node_list.length;
+            tree._node_list.push(this);
 
             return;
         }
@@ -191,6 +196,7 @@ class BSPNode {
     ExtractPrimsNoCopy(out) {
         if (this.isLeaf())
             for (let p of this._polygons) {
+
                 out.push(p);
 
             }
@@ -260,7 +266,7 @@ class BSPNode {
                     engine._primitives_back_face_culling++;
                     continue;
                 }
-
+                console.log("saddadadadddadaad")
                 let clipped = engine._BeamTree.renderPolygon(p);
                 if (!clipped) continue;
                 /*
@@ -408,12 +414,12 @@ class BSPNode {
     }
 
 
-    Finde_besten_Splitter(polyliste, gewichtung = 18) {
-        return this.finde(polyliste, gewichtung);
+    Finde_besten_Splitter(polyliste, aabb, gewichtung = 18) {
+        return this.finde(polyliste, aabb, gewichtung);
     }
 
 
-    Finde_besten_Splitter1(polyliste, gewichtung = 18) {
+    Finde_besten_Splitter1(polyliste, aabb, gewichtung = 18) {
 
 
         let best_index = -1
@@ -471,7 +477,7 @@ class BSPNode {
     }
 
 
-    Finde_besten_Splitter2(polyliste, gewichtung = 18) {
+    Finde_besten_Splitter2(polyliste, aabb, gewichtung = 18) {
         let best_index = -1;
         let best_score = Number.MAX_VALUE;
 
@@ -621,11 +627,17 @@ class BSPNode {
 
             const axisPenalty =
                 (1.0 - axis) * 50.0;
+            /*
+                        const finalScore =
+                            Math.abs(lFront - lBack) +
+                            (lSplits * gewichtung) +
+                            axisPenalty;
+            */
 
-            const finalScore =
-                Math.abs(lFront - lBack) +
-                (lSplits * gewichtung) +
-                axisPenalty;
+            const [frontBox, backBox] = aabb.SplitAABB(pSplitter.plane);
+            const frontArea = frontBox.SurfaceArea();
+            const backArea = backBox.SurfaceArea();
+            const finalScore = frontArea * lFront + backArea * lBack + lSplits * gewichtung + axisPenalty;
 
             //
             // Bester Kandidat?
@@ -638,7 +650,8 @@ class BSPNode {
 
         return best_index;
     }
-Finde_besten_Splitter3(polyliste, nodeAABB, gewichtung = 18) {
+
+    Finde_besten_Splitter3(polyliste, nodeAABB, gewichtung = 18) {
         let best_index = -1;
         let best_score = Number.MAX_VALUE;
 
@@ -740,6 +753,186 @@ Finde_besten_Splitter3(polyliste, nodeAABB, gewichtung = 18) {
     }
 
 
+    Finde_besten_Splitter4(polyliste, nodeAABB, gewichtung = 18) {
+        let best_index = -1;
+        let best_score = Number.MAX_VALUE;
+
+        //---------------------------------------------
+        // Phase 1
+        //---------------------------------------------
+
+        const kandidaten = [];
+
+        for (let i = 0; i < polyliste.length; i++) {
+            const p = polyliste[i];
+
+            if (p._was_best_splitter) continue;
+            if (p._can_not_be_splitter) continue;
+            if (p._create_from_aabb) continue;
+
+            const axisScore = this.AxisScore(p.plane.normal);
+            const areaScore = p.area || 1.0;
+
+            kandidaten.push({
+                index: i,
+                heuristic: axisScore * 10.0 + areaScore
+            });
+        }
+
+        kandidaten.sort((a, b) => b.heuristic - a.heuristic);
+
+        //---------------------------------------------
+        // Parentfläche nur einmal berechnen
+        //---------------------------------------------
+
+        const parentArea = nodeAABB.SurfaceArea();
+
+        //---------------------------------------------
+        // Phase 2
+        //---------------------------------------------
+
+        for (const kandidat of kandidaten) {
+            const i = kandidat.index;
+            const splitter = polyliste[i];
+
+            //-----------------------------------------
+            // Split-AABB nur einmal berechnen
+            //-----------------------------------------
+
+            const [frontBox, backBox] =
+                nodeAABB.SplitAABB(splitter.plane);
+
+            const frontWeight =
+                frontBox.SurfaceArea() / parentArea;
+
+            const backWeight =
+                backBox.SurfaceArea() / parentArea;
+
+            //-----------------------------------------
+
+            let lFront = 0;
+            let lBack = 0;
+            let lPlanar = 0;
+            let lSplits = 0;
+
+            let runningScore = 0.0;
+            let aborted = false;
+
+            //-----------------------------------------
+
+            for (let j = 0; j < polyliste.length; j++) {
+                if (i == j)
+                    continue;
+
+                const p = polyliste[j];
+
+                if (p._can_not_be_splitter)
+                    continue;
+
+                const c = splitter.plane.Classify(p);
+
+                switch (c) {
+                    case FRONT:
+
+                        lFront++;
+                        runningScore += frontWeight;
+                        break;
+
+                    case BACK:
+
+                        lBack++;
+                        runningScore += backWeight;
+                        break;
+
+                    case PLANAR:
+
+                        lPlanar++;
+                        break;
+
+                    case SPANNING:
+
+                        lFront++;
+                        lBack++;
+                        lSplits++;
+
+                        runningScore += frontWeight;
+                        runningScore += backWeight;
+                        runningScore += gewichtung;
+
+                        break;
+                }
+
+                //-------------------------------------
+                // SAH Early-Out
+                //-------------------------------------
+
+                if (runningScore >= best_score) {
+                    aborted = true;
+                    break;
+                }
+            }
+
+            if (aborted)
+                continue;
+
+            //-----------------------------------------
+
+            if (!(((lFront > 0) && (lBack > 0)) ||
+                (lSplits > 0))) {
+                continue;
+            }
+
+            //-----------------------------------------
+
+            const axisPenalty =
+                (1.0 - this.AxisScore(splitter.plane.normal)) * 5.0;
+
+            const finalScore =
+                runningScore + axisPenalty;
+
+            //-----------------------------------------
+
+            if (finalScore < best_score) {
+                best_score = finalScore;
+                best_index = i;
+            }
+        }
+
+        return best_index;
+    }
+
+    DebugOut() {
+        let leaf = false;
+
+        if (!this._front && !this._back) leaf = true;
+        if (this._leaf) {
+            if (leaf) console.log(" ");
+            console.log("Node ID [", this._node_id, "]");
+            switch (this._owner) {
+                case ROOT_OWNER: console.log("Owner : ROOT"); break;
+                case FRONT_OWNER: console.log("Owner : FRONT"); break;
+                case BACK_OWNER: console.log("Owner : BACK"); break;
+                default: console.log("Owner : ????"); break;
+            }
+            if (this._leaf) {
+                console.log("LEAF  [", this._leaf_id, "]");
+            }
+            if (this._front) {
+                console.log("Front Node ", this._front._node_id);
+            } else console.log("Front Node NULL")
+            if (this._back) {
+                console.log("Back Node ", this._back._node_id);
+            } else console.log("Back Node NULL")
+            if (leaf) console.log(" ");
+        }
+        if (this._front) this._front.DebugOut();
+        if (this._back) this._back.DebugOut();
+
+    }
+
+
+
+
 }
 
 
@@ -749,6 +942,7 @@ Finde_besten_Splitter3(polyliste, nodeAABB, gewichtung = 18) {
 class BSPTree {
     constructor(polygons = nothing) {
         this._leaf_list = new Array();
+
         this._node_list = new Array();
         this._portal_list = new Array();
         this._root = null;
@@ -978,6 +1172,14 @@ class BSPTree {
     }
 
 
+    DebugOut() {
+        console.log("Debug BspTree");
+        if (!this._root) {
+            console.log("Root == null");
+            return;
+        }
+        this._root.DebugOut();
+    }
 
     BuildPortals() {
         this._portal_list = new Array();
@@ -985,7 +1187,7 @@ class BSPTree {
         if (!this._root) return;
 
         for (let n of this._node_list) {
-
+            if (n._node_id < 0) continue;
             let portal = n._aabb.ClipPortal(new Portal(n.plane, n.aabb.len()/*1000000000*/));
             let pre_list = new Array();
 
