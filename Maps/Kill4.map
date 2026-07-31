@@ -1,3 +1,5 @@
+// Game: Half-Life
+// Format: Valve
 // entity 0
 {
 "mapversion" "220"
@@ -696,4 +698,49 @@
 "delay" "0"
 "angles" "0 0 0"
 "origin" "-112 208 -112"
+}
+// entity 2
+{
+"classname" "light"
+"_light" "255 0 128 200"
+"style" "0"
+"_fade" "1.0"
+"_falloff" "0"
+"origin" "184 216 120"
+}
+// entity 3
+{
+"classname" "light"
+"_light" "0 255 128 200"
+"style" "0"
+"_fade" "1.0"
+"_falloff" "0"
+"origin" "56 -184 120"
+}
+// entity 4
+{
+"classname" " "
+"_light" "255 0 128 200"
+"style" "0"
+"_fade" "1.0"
+"_falloff" "0"
+"origin" "-136 -184 120"
+}
+// entity 5
+{
+"classname" "light"
+"_light" "255 255 128 200"
+"style" "0"
+"_fade" "1.0"
+"_falloff" "0"
+"origin" "-40 -136 -88"
+}
+// entity 6
+{
+"classname" "light"
+"_light" "255 255 128 200"
+"style" "0"
+"_fade" "1.0"
+"_falloff" "0"
+"origin" "56 8 -152"
 }

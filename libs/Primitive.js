@@ -494,15 +494,19 @@ class Polygon extends PrimitiveBase {
 
 
         for (let i = 0; i < this._verts.length; i++) {
-            this._verts[i].texture.x = (((this._verts[i].texture.x - umin) / udelta) * realw + realx);
-            this._verts[i].texture.y = (((this._verts[i].texture.y - vmin) / vdelta) * realh + realy);
+            this._verts[i].texture.x =
+                ((this._verts[i].texture.x - umin) / udelta) * realw + realx;
 
+            this._verts[i].texture.y =
+                ((this._verts[i].texture.y - vmin) / vdelta) * realh + realy;
 
 
 
         }
 
     }
+
+
     setPlanarLightTexture(realx = 0, realy = 0, realw = 1, realh = 1) {
         let ali = this.plane.GetAlignement();
         let umin = 0;
@@ -525,6 +529,8 @@ class Polygon extends PrimitiveBase {
                     vmin = Math.min(vmin, this._verts[i].light_texture.y);
                     vmax = Math.max(vmax, this._verts[i].light_texture.y);
 
+
+
                 }
 
             }
@@ -534,8 +540,8 @@ class Polygon extends PrimitiveBase {
 
 
                 if (i === 0) {
-                    umin = umax = this._verts[i].texture.x;
-                    vmin = vmax = this._verts[i].texture.y;
+                    umin = umax = this._verts[i].light_texture.x;
+                    vmin = vmax = this._verts[i].light_texture.y;
                 } else {
                     umin = Math.min(umin, this._verts[i].light_texture.x);
                     umax = Math.max(umax, this._verts[i].light_texture.x);
@@ -569,8 +575,11 @@ class Polygon extends PrimitiveBase {
 
 
         for (let i = 0; i < this._verts.length; i++) {
-            this._verts[i].light_texture.x = (((this._verts[i].light_texture.x + umin) / udelta) * realw + realx);
-            this._verts[i].light_texture.y = (((this._verts[i].light_texture.y + vmin) / vdelta) * realh + realy);
+            this._verts[i].light_texture.x =
+                ((this._verts[i].light_texture.x - umin) / udelta) * realw + realx;
+
+            this._verts[i].light_texture.y =
+                ((this._verts[i].light_texture.y - vmin) / vdelta) * realh + realy;
         }
 
     }
@@ -1255,87 +1264,108 @@ class Polygon extends PrimitiveBase {
     CalcLightMapParm(vscale = 1.0) {
 
         let ali = this.plane.GetAlignement();
+
         let umin = Infinity;
         let umax = -Infinity;
         let vmin = Infinity;
         let vmax = -Infinity;
 
         for (let v of this.vertices) {
+
             switch (ali) {
+
+                // YZ
                 case 0:
-                    umax = Math.max(umax, v.world.y);
-                    vmax = Math.max(vmax, v.world.y);
-                    umin = Math.min(umin, v.world.z);
-                    vmin = Math.min(vmin, v.world.z);
-                    break;
-
-                case 1:
-                    umax = Math.max(umax, v.world.x);
-                    vmax = Math.max(vmax, v.world.x);
-                    umin = Math.min(umin, v.world.z);
-                    vmin = Math.min(vmin, v.world.z);
-                    break;
-
-                case 2:
-                    umax = Math.max(umax, v.world.x);
-                    vmax = Math.max(vmax, v.world.x);
                     umin = Math.min(umin, v.world.y);
+                    umax = Math.max(umax, v.world.y);
+
+                    vmin = Math.min(vmin, v.world.z);
+                    vmax = Math.max(vmax, v.world.z);
+                    break;
+
+                // XZ
+                case 1:
+                    umin = Math.min(umin, v.world.x);
+                    umax = Math.max(umax, v.world.x);
+
+                    vmin = Math.min(vmin, v.world.z);
+                    vmax = Math.max(vmax, v.world.z);
+                    break;
+
+                // XY
+                case 2:
+                    umin = Math.min(umin, v.world.x);
+                    umax = Math.max(umax, v.world.x);
+
                     vmin = Math.min(vmin, v.world.y);
+                    vmax = Math.max(vmax, v.world.y);
                     break;
             }
         }
 
+        let tumin = umin * vscale;
+        let tumax = umax * vscale;
+        let tvmin = vmin * vscale;
+        let tvmax = vmax * vscale;
 
-        let tumin = umin * vscale
-        let tvmin = vmin * vscale
-        let tumax = umax * vscale
-        let tvmax = vmax * vscale
-
-        let x = 0; let y = 0; let z = 0;
         let norm = this.plane.normal;
         let d = this.plane.D;
-        let vect2, vect1;
+
+        let x = 0;
+        let y = 0;
+        let z = 0;
+
+        let vect1;
+        let vect2;
 
         switch (ali) {
+
+            // YZ
             case 0:
-                x = (norm.z * tumin + norm.y * tvmin + d) / norm.x
-                this.m_uvvector = new Vector3(x, tvmin, tumin)
-                x = (norm.z * tumax + norm.y * tvmin + d) / norm.x
-                vect1 = new Vector3(x, tvmin, tumax)
-                x = (norm.z * tumin + norm.y * tvmax + d) / norm.x
-                vect2 = new Vector3(x, tvmax, tumin)
+
+                x = (norm.z * tumin + norm.y * tvmin + d) / norm.x;
+                this.m_uvvector = new Vector3(x, tumin, tvmin);
+
+                x = (norm.z * tvmin + norm.y * tumax + d) / norm.x;
+                vect1 = new Vector3(x, tumax, tvmin);
+
+                x = (norm.z * tumin + norm.y * tvmax + d) / norm.x;
+                vect2 = new Vector3(x, tumin, tvmax);
+
                 break;
 
+            // XZ
             case 1:
-                y = (norm.x * tumin + norm.z * tvmin + d) / norm.y
-                this.m_uvvector = new Vector3(-tumin, y, tvmin)
-                y = (norm.x * tumax + norm.z * tvmin + d) / norm.y
-                vect1 = new Vector3(tumax, y, tvmin)
-                y = (norm.x * tumin + norm.z * tvmax + d) / norm.y
-                vect2 = new Vector3(tumin, y, tvmax)
+
+                y = (norm.x * tumin + norm.z * tvmin + d) / norm.y;
+                this.m_uvvector = new Vector3(tumin, y, tvmin);
+
+                y = (norm.x * tumax + norm.z * tvmin + d) / norm.y;
+                vect1 = new Vector3(tumax, y, tvmin);
+
+                y = (norm.x * tumin + norm.z * tvmax + d) / norm.y;
+                vect2 = new Vector3(tumin, y, tvmax);
+
                 break;
 
+            // XY
             case 2:
-                z = (norm.x * umin + norm.y * vmin + d) / norm.z
-                this.m_uvvector = new Vector3(-umin, vmin, z)
-                z = (norm.x * umax + norm.y * vmin + d) / norm.z
-                vect1 = new Vector3(umax, vmin, z)
-                z = (norm.x * umin + norm.y * vmax + d) / norm.z
-                vect2 = new Vector3(umin, vmax, z)
 
+                z = (norm.x * tumin + norm.y * tvmin + d) / norm.z;
+                this.m_uvvector = new Vector3(tumin, tvmin, z);
 
+                z = (norm.x * tumax + norm.y * tvmin + d) / norm.z;
+                vect1 = new Vector3(tumax, tvmin, z);
+
+                z = (norm.x * tumin + norm.y * tvmax + d) / norm.z;
+                vect2 = new Vector3(tumin, tvmax, z);
 
                 break;
         }
+
         this.m_edge1 = vect1.sub(this.m_uvvector);
         this.m_edge2 = vect2.sub(this.m_uvvector);
-
-        // console.log("Edge1    :", this.edge1.x, this.edge1.y, this.edge1.z)
-        // console.log("Edge2    :", this.edge2.x, this.edge2.y, this.edge2.z)
-        // console.log("uvvector :", this.uvvector.x, this.uvvector.y, this.uvvector.z)
-
     }
-
 
     get edge1() { return this.m_edge1; }
     get edge2() { return this.m_edge2; }
@@ -1346,46 +1376,35 @@ class Polygon extends PrimitiveBase {
 
 
     RayPolygonDistance(start, end) {
+
+        let ray = new Ray(start, end);
+        let o = this.plane.intersect(new Ray(start, end));
+        if (!o[0]) return -1;
+        let t = Math.abs(o[1]);
+
+
+        let np = ray.normal.mul(t).add(start);
+        if (!this.PointInPolygon(np)) return -1;
+        return t;
+    }
+
+    PointInPolygon(point) {
         const EPSILON = 1e-6;
-
-        if (this.vertices.length < 3)
-            return -1;
-
-        const dir = end.sub(start);
-
-        // Ebenennormale
         const normal = this.plane.normal;
 
-        const denom = normal.dot(dir);
-
-        // Parallel
-        if (Math.abs(denom) < EPSILON)
-            return -1;
-
-        // Parameter auf dem Strahl
-        const t = normal.dot(this.vertices[0].world.sub(start)) / denom;
-
-        // Außerhalb der Strecke Start-Ende
-        if (t < 0 || t > 1)
-            return -1;
-
-        const hit = start.add(dir.mul(t));
-
-        // Inside-Test
         for (let i = 0; i < this.vertices.length; i++) {
             const a = this.vertices[i].world;
             const b = this.vertices[(i + 1) % this.vertices.length].world;
 
             const edge = b.sub(a);
-            const toPoint = hit.sub(a);
+            const toPoint = point.sub(a);
 
-            if (edge.cross(toPoint).dot(normal) < -EPSILON) return -1;
+            if (edge.cross(toPoint).dot(normal) < -EPSILON)
+                return false;
         }
-        return hit.sub(start).length();
 
+        return true;
     }
-
-
 
 }
 class IndexedObject extends PrimitiveBase {

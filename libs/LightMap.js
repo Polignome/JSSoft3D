@@ -89,41 +89,66 @@ class BigLightMap extends Canvas {
     }
 
 
+    LightFalloff(distance, radius) {
+        let f = (distance / radius);
 
+        if (f < 0)
+            return 0;
+
+        return f * f;
+    }
     ProcessPoly(source, polygons = null, light_sources) {
         for (let light of light_sources) {
-            let w = light.color.w * light.color.w;
+            if (source.plane.Classify(light.pos) === BACK) continue;
             for (let ix = 0; ix < source._light_map_width; ix++) {
                 for (let iy = 0; iy < source._light_map_height; iy++) {
-                    let ufactor = (ix / (source._light_map_width));
-                    let vfactor = (iy / (source._light_map_height));
 
-                    let newedge1 = source.edge1.mul(ufactor);
-                    let newedge2 = source.edge2.mul(vfactor);
-                    let lumel = source.uvvector.add(newedge1.add(newedge2));
+                    let ufactor = (ix) / (source._light_map_width - 1);
+                    let vfactor = (iy) / (source._light_map_height - 1);
 
-                    let dir = lumel.sub(light.pos)
-                    let dist = dir.length();
-                    //  if (dist > w || source.plane.Classify(light.pos) === BACK) continue;
+                    let lumel =
+                        source.uvvector
+                            .add(source.edge1.mul(ufactor))
+                            .add(source.edge2.mul(vfactor));
 
-                    let hit = true;;
-                    /*    for (let p of polygons) {
-    
-                            if (p === source) continue;
-                            //if (p.plane.Classify(light.pos) === BACK) continue;
-                            let r = p.RayPolygonDistance(lumel, light.pos);
-                            if (r === -1) continue;
-                            if (r < dist) { hit = false; break; }
-                        }
-                        if (!hit) continue;
-    */
+                    //   if (!source.PointInPolygon(lumel)) continue;
+                    let dist = lumel.sub(light.pos).length()
 
-                    dist = 255 - Math.min(dist, 255)
+                    let hit = true;
+                    for (let p of polygons) {
+                        if (p === source) continue; // Polygon nicht gegen sich selbst testen
+                        //let r = p.RayPolygonDistance(lumel, light.pos);
+                        //let r = p.plane.intersect2(lumel, light.pos);
+                        let r = p.RayPolygonDistance(lumel, light.pos);
+                        if (r === -1) continue
+                        if (r < dist) { hit = false; break; }
+                    }
 
-                    //  dist = Math.max(0, Math.exp(-dist / (w >> 3))) * 255
-                    //dist = dist;
-                    //let color = RGB((dist) | 0, (dist) | 0, (dist) | 0)
-                    this.PutPixel(source._light_map_posx + ix, source._light_map_posy + iy, color);
+                    if (!hit) continue;
+
+                    let intensity = light.color.w * 2 / (dist/* * dist + 64*/);
+
+
+                    //dist = 255 - Math.min(dist, 255)
+                    let rr = Math.min((intensity * light.color.x) | 0, 255)
+                    let gg = Math.min((intensity * light.color.y) | 0, 255)
+                    let bb = Math.min((intensity * light.color.z) | 0, 255)
+                    let xx = source._light_map_posx + ix;
+                    let yy = source._light_map_posy + iy;
+
+
+                    let cl = this.GetPixel(xx, yy);
+                    let cr = RGBToRed(cl);
+                    let cg = RGBToGreen(cl);
+                    let cb = RGBToBlue(cl);
+                    rr = Math.min((rr + cr) | 0, 255);
+                    gg = Math.min((gg + cg) | 0, 255);
+                    bb = Math.min((bb + cb) | 0, 255);
+
+                    //                    this.PutPixel(xx, yy, RGB(rr, gg, bb));
+                    this.PutPixel(xx, yy, RGB(rr, gg, bb));
+
+
 
 
                 }
@@ -134,7 +159,7 @@ class BigLightMap extends Canvas {
 
 
 
-    CalcLightmap(polygons, lights, max_texture_scale = 64 * 2) {
+    CalcLightmap(polygons, lights, max_texture_scale = 64) {
         let maxw = -Infinity;
         let maxh = -Infinity;
         this.rec = new Rect(0, 0, this._width, this._height);

@@ -344,7 +344,7 @@ class Span {
                     let luu = this._light_map_posx + (Math.abs(ls * this._light_map_width) | 0) % this._light_map_width;
                     let lvv = this._light_map_posy + (Math.abs(lt * this._light_map_height) | 0) % this._light_map_height;
                     let lc = ltexture.GetPixel(luu | 0, lvv | 0);
-                    front = lc//RGB((RGBToRed(front) + RGBToRed(lc)) >> 1, (RGBToGreen(front) + RGBToGreen(lc)) >> 1, (RGBToBlue(front) + RGBToBlue(lc)) >> 1);
+                    front = RGB((RGBToRed(front) + RGBToRed(lc)) >> 1, (RGBToGreen(front) + RGBToGreen(lc)) >> 1, (RGBToBlue(front) + RGBToBlue(lc)) >> 1);
 
                 }
 

@@ -195,7 +195,7 @@ class QMap {
             if (entry.isLight()) {
 
 
-                light_list.push(new LightSorce(entry.light_color, entry.light_pos));
+                light_list.push(new LightSorce(entry.light_color, entry.light_orgin));
                 continue;
             }
         }

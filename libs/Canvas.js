@@ -253,7 +253,7 @@ class Canvas {
     for (let y = 0; y < texture.height; y++) {
       for (let x = 0; x < texture.width; x++) {
         let color = texture.buffer[x + y * texture.width];
-        this.PutPixel(posx + x, posy + y, color);
+        //    this.PutPixel(posx + x, posy + y, color);
       }
     }
   }

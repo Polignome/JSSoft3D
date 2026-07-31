@@ -47,9 +47,7 @@ class Ray {
         this._dCalculated = false;
 
         if (N instanceof Vector3 && M instanceof Vector3) {
-            this._origin = new Vector3(N);
-            this._vector = M.sub(N);
-            this._normal = new Vector3()
+            this.calc(N, M)
             return;
         }
 
@@ -245,6 +243,14 @@ class Ray {
         return o;
     }
 
+    intersect2(start, end) {
+        let o = this.intersect(new Ray(start, end));
+        if (!o[0]) return -1;
+        return Math.abs(o[1]);
+
+
+    }
+
     closest(point) {
         let t = this.distance(point);
         if (this._N == 2) return new Vector2(point.sub(normal().mul(t)));
@@ -281,7 +287,7 @@ class Ray {
 
     get normal() {
         if (!this.nCalculated) {
-            this._normal = this._vector;
+            this._normal = new Vector3(this._vector);
             this._normal.normalize();
             this._nCalculated = true;
         }
