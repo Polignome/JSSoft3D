@@ -121,33 +121,23 @@ class BigLightMap extends Canvas {
 
                     if (dist > light.radius) continue;
 
-                    let pray = new Ray(light.pos, lumel);
+                    let pray = new Ray(light.pos, lumel.sub(light.pos));
 
                     let hit = false;
+                    const EPS = 1e-3;
+
                     for (let p of polygons) {
                         if (p === source) continue;
                         if (p.plane.Classify(light.pos) === BACK) continue;
+
                         let r = p.RayPolygonDistance2(pray);
+                        if (r === -1) continue;
 
-                        if (r === -1) continue
-
-                        if (r < dist) {
-                            console.log(r, dist)
+                        if (r < EPS) continue;          // Treffer direkt am Ray-Ursprung ignorieren
+                        if (r < dist - EPS) {           // nur "echt davor" zählt als Verdeckung
                             hit = true;
                             break;
                         }
-
-                        /*
-                        
-                            let r = p.SegmentPolygonDistance(lumel, light.pos)
-    
-                            if (r === -1) continue;
-                            if (r < dist) {
-                                console.log("Hit")
-                                hit = true;
-                                break;
-                            }
-                                */
                     }
                     if (hit) continue
 

@@ -1380,34 +1380,14 @@ class Polygon extends PrimitiveBase {
     RayPolygonDistance2(ray) {
 
 
-        let o = this.plane.intersect(ray);
-        if (!o[0]) return -1;
-        let t = Math.abs(o[1]);
-
+        let t = this.plane.intersect(ray);
+        if (t == -1) return -1;
 
         let np = ray.normal.mul(t).add(ray.origin);
         if (!this.PointInPolygon(np)) return -1;
         return t;
     }
-    /*
-        PointInPolygon(point) {
-            const EPSILON = 0.1;//1e-6;
-            const normal = this.plane.normal;
-    
-            for (let i = 0; i < this.vertices.length; i++) {
-                const a = this.vertices[i].world;
-                const b = this.vertices[(i + 1) % this.vertices.length].world;
-    
-                const edge = b.sub(a);
-                const toPoint = point.sub(a);
-    
-                if (edge.cross(toPoint).dot(normal) < -EPSILON)
-                    return false;
-            }
-    
-            return true;
-        }
-    */
+
 
     PointInPolygon(point) {
         const n = this.plane.normal;
