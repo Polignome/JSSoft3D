@@ -1,6 +1,5 @@
-class AABB2D
-{
-constructor(a = undefined, b = undefined) {
+class AABB2D {
+    constructor(a = undefined, b = undefined) {
 
         this._recalc = true;
         if (a instanceof Vector2 && b instanceof Vector2) {
@@ -15,31 +14,31 @@ constructor(a = undefined, b = undefined) {
         this.reset();
 
         this.Add(a);
-   }
+    }
 
 
-   top() {
-    return this.min.y;
-   }
-   bottom() {
-    return this.max.y;
-   }
-   left() {
-    return this.min.x;
-   }
-   right() {
-    return this.max.x;
-   }
+    top() {
+        return this.min.y;
+    }
+    bottom() {
+        return this.max.y;
+    }
+    left() {
+        return this.min.x;
+    }
+    right() {
+        return this.max.x;
+    }
 
-   width() {
-       return this.max.x - this.min.x 
-       
-   }
+    width() {
+        return this.max.x - this.min.x
 
-   height() {
-      return this.max.y - this.min.y    
-   }
-       Add(a) {
+    }
+
+    height() {
+        return this.max.y - this.min.y
+    }
+    Add(a) {
 
         if (a instanceof Vector2) {
             const min = this._min;
@@ -47,17 +46,17 @@ constructor(a = undefined, b = undefined) {
 
             if (a.x < min.x) this._min.x = a.x;
             if (a.y < min.y) this._min.y = a.y;
-            
+
 
             if (a.x > max.x) this._max.x = a.x;
             if (a.y > max.y) this._max.y = a.y;
-            
+
 
 
             return;
         }
 
-        
+
         if (a instanceof AABB2D) {
             this.Add(a._min);
             this.Add(a._max);
@@ -81,7 +80,7 @@ constructor(a = undefined, b = undefined) {
         this._max.y = -Infinity;
     }
 
-    
+
     center(out = new Vector2()) {
         out.x = (this._min.x + this._max.x) * 0.5;
         out.y = (this._min.y + this._max.y) * 0.5;
@@ -102,10 +101,10 @@ constructor(a = undefined, b = undefined) {
     get min() { return new Vector2(this._min); }
     get max() { return new Vector2(this._max); }
 
-  getAABBCorners() {
+    getAABBCorners() {
 
 
- return [
+        return [
             new Vector3(min.x, min.y),
             new Vector3(max.x, min.y),
             new Vector3(max.x, max.y),
@@ -113,7 +112,7 @@ constructor(a = undefined, b = undefined) {
         ];
 
 
-  }
+    }
 
 }
 
@@ -341,7 +340,20 @@ class AABB {
             maxDepth
         };
     }
+    SphereIntersectsAABB(center, radius) {
+        let distSq = 0;
 
+        if (center.x < this.min.x) distSq += (this.min.x - center.x) ** 2;
+        else if (center.x > this.max.x) distSq += (center.x - this.max.x) ** 2;
+
+        if (center.y < this.min.y) distSq += (this.min.y - center.y) ** 2;
+        else if (center.y > this.max.y) distSq += (center.y - this.max.y) ** 2;
+
+        if (center.z < this.min.z) distSq += (this.min.z - center.z) ** 2;
+        else if (center.z > this.max.z) distSq += (center.z - this.max.z) ** 2;
+
+        return distSq <= radius * radius;
+    }
     IntersectedByBounds(bounds, tolerance = 0) {
         return ((this._min.x - tolerance) <= (bounds._max.x + tolerance)) &&
             ((this._min.y - tolerance) <= (bounds._max.y + tolerance)) &&

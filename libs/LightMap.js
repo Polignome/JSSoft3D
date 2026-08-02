@@ -105,6 +105,16 @@ class BigLightMap extends Canvas {
             // BACK-Test vorerst deaktivieren
             if (source.plane.Classify(light.pos) === BACK) continue;
 
+            let polys = polygons;
+            /*
+            let polys = [];
+            for (let p of polygons) {
+                let aabb = new AABB(p);
+                if (aabb.SphereIntersectsAABB(light.pos, light.color.w)) {
+                    polys.push(p);
+                }
+            }
+            */
             for (let ix = 0; ix < source._light_map_width; ix++) {
                 for (let iy = 0; iy < source._light_map_height; iy++) {
 
@@ -126,7 +136,7 @@ class BigLightMap extends Canvas {
                     let hit = false;
                     const EPS = 1e-3;
 
-                    for (let p of polygons) {
+                    for (let p of polys) {
                         if (p === source) continue;
                         if (p.plane.Classify(light.pos) === BACK) continue;
 
