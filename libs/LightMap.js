@@ -98,23 +98,22 @@ class BigLightMap extends Canvas {
         return f * f;
     }
 
-
     ProcessPoly(source, polygons = null, light_sources) {
         for (let light of light_sources) {
 
             // BACK-Test vorerst deaktivieren
             if (source.plane.Classify(light.pos) === BACK) continue;
 
-            let polys = polygons;
-            /*
+            // let polys = polygons;
+
             let polys = [];
             for (let p of polygons) {
                 let aabb = new AABB(p);
-                if (aabb.SphereIntersectsAABB(light.pos, light.color.w)) {
+                if (aabb.SphereIntersectsAABB(light.pos, light.radius * 2)) {
                     polys.push(p);
                 }
             }
-            */
+            console.log("Help -> ", polys.length)
             for (let ix = 0; ix < source._light_map_width; ix++) {
                 for (let iy = 0; iy < source._light_map_height; iy++) {
 
@@ -129,7 +128,7 @@ class BigLightMap extends Canvas {
 
                     let dist = lumel.sub(light.pos).length();
 
-                    if (dist > light.radius) continue;
+                    if (dist > light.radius * 2) continue;
 
                     let pray = new Ray(light.pos, lumel.sub(light.pos));
 
@@ -138,7 +137,7 @@ class BigLightMap extends Canvas {
 
                     for (let p of polys) {
                         if (p === source) continue;
-                        if (p.plane.Classify(light.pos) === BACK) continue;
+                        //    if (p.plane.Classify(light.pos) === BACK) continue;
 
                         let r = p.RayPolygonDistance2(pray);
                         if (r === -1) continue;
@@ -152,7 +151,7 @@ class BigLightMap extends Canvas {
                     if (hit) continue
 
 
-                    let intensity = light.color.w / dist/*(dist * dist + 1);*/
+                    let intensity = light.color.w / dist//(dist * dist + 1);
                     //  let intensity = light.color.w / (dist * dist + 1);
 
                     let rr = Math.min((intensity * light.color.x) | 0, 255)
@@ -242,7 +241,7 @@ class BigLightMap extends Canvas {
             let y1 = p._light_map_posy + p._light_map_height
 
             this.ProcessPoly(p, polygons, lights)
-
+            this.BlurRegion(x0, y0, p._light_map_width, p._light_map_height)
             // this.DrawRec(x0, y0, x0 + 5, y0 + 5, RGB(255, 255, 0))
             // this.DrawRec(x1 - 5, y1 - 5, x1 - 1, y1 - 1, RGB(255, 255, 255))
 

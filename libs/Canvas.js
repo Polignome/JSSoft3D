@@ -490,6 +490,36 @@ class Canvas {
     this._ctx.fillText(text, x, y);
   }
 
+
+  BlurRegion(x0, y0, w, h, radius = 1) {
+    const src = [];
+    for (let y = 0; y < h; y++) {
+      src[y] = [];
+      for (let x = 0; x < w; x++) {
+        src[y][x] = this.GetPixel(x0 + x, y0 + y);
+      }
+    }
+
+    for (let y = 0; y < h; y++) {
+      for (let x = 0; x < w; x++) {
+        let r = 0, g = 0, b = 0, count = 0;
+        for (let dy = -radius; dy <= radius; dy++) {
+          for (let dx = -radius; dx <= radius; dx++) {
+            const sx = x + dx, sy = y + dy;
+            if (sx < 0 || sy < 0 || sx >= w || sy >= h) continue; // FIX: kein Wrap über Chart-Grenze
+            const c = src[sy][sx];
+            r += RGBToRed(c);
+            g += RGBToGreen(c);
+            b += RGBToBlue(c);
+            count++;
+          }
+        }
+        this.PutPixel(x0 + x, y0 + y, RGB(r / count | 0, g / count | 0, b / count | 0));
+      }
+    }
+  }
+
+
 }
 
 

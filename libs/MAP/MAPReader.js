@@ -169,9 +169,10 @@ class LightSorce {
 
     get pos() { return this._pos; }
     get color() { return this._color; }
-
+    get radius() { return this._color.w; }
     set pos(a) { this._po = new Vector3(a); }
     set color(a) { this._color = new Vector4(a); }
+    set radius(a) { this._color.w; }
 }
 
 

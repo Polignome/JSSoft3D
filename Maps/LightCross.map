@@ -141,9 +141,27 @@
 // entity 1
 {
 "classname" "light"
-"_light" "255 255 128 100"
+"_light" "255 0 0 300"
 "style" "0"
 "_fade" "1.0"
 "_falloff" "0"
-"origin" "296 -8 232"
+"origin" "296 -56 184"
+}
+// entity 2
+{
+"classname" "light"
+"_light" "0 255 0 300"
+"style" "0"
+"_fade" "1.0"
+"_falloff" "0"
+"origin" "296 -8 184"
+}
+// entity 3
+{
+"classname" "light"
+"_light" "0 0 255 300"
+"style" "0"
+"_fade" "1.0"
+"_falloff" "0"
+"origin" "296 56 184"
 }
