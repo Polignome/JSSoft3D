@@ -344,7 +344,24 @@ class Span {
                     let luu = this._light_map_posx + (Math.abs(ls * this._light_map_width) | 0) % this._light_map_width;
                     let lvv = this._light_map_posy + (Math.abs(lt * this._light_map_height) | 0) % this._light_map_height;
                     let lc = ltexture.GetPixel(luu | 0, lvv | 0);
-                    front = RGB((RGBToRed(front) + RGBToRed(lc)) >> 1, (RGBToGreen(front) + RGBToGreen(lc)) >> 1, (RGBToBlue(front) + RGBToBlue(lc)) >> 1);
+                    //                    front = RGB((RGBToRed(front) + RGBToRed(lc)) >> 1, (RGBToGreen(front) + RGBToGreen(lc)) >> 1, (RGBToBlue(front) + RGBToBlue(lc)) >> 1);
+
+
+                    let lr = Math.min(RGBToRed(lc) + rasterizer._abient_light.x, 255);
+                    let lg = Math.min(RGBToGreen(lc) + rasterizer._abient_light.y, 255);
+                    let lb = Math.min(RGBToBlue(lc) + rasterizer._abient_light.z, 255);
+
+                    let r = (RGBToRed(front) * lr) >> 8;
+                    let g = (RGBToGreen(front) * lg) >> 8;
+                    let b = (RGBToBlue(front) * lb) >> 8;
+
+
+                    /*
+                                        let r = RGBToRed(front) * Math.min(rasterizer._abient_light.x + RGBToRed(lc), 1.0);
+                                        let g = RGBToGreen(front) * Math.min(rasterizer._abient_light.y + RGBToGreen(lc), 1.0);
+                                        let b = RGBToBlue(front) * Math.min(rasterizer._abient_light.z + RGBToBlue(lc), 1.0);
+                    */
+                    front = RGB(r, g, b);
 
                 }
 

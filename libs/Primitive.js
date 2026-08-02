@@ -1158,13 +1158,6 @@ class Polygon extends PrimitiveBase {
         return [npoly, help];
     }
 
-
-
-
-
-
-
-
     SplitPolyByPlane(plane, add_normal = false) {
         var fpoly = new Polygon();
         var bpoly = new Polygon();
@@ -1241,7 +1234,6 @@ class Polygon extends PrimitiveBase {
         return [fpoly, bpoly];
     }
 
-
     ClipByFrustum(frustum) {
 
         var p = this;
@@ -1262,20 +1254,17 @@ class Polygon extends PrimitiveBase {
     }
 
     CalcLightMapParm(vscale = 1.0) {
-
-        let ali = this.plane.GetAlignement();
+        const ali = this.plane.GetAlignement();
 
         let umin = Infinity;
         let umax = -Infinity;
         let vmin = Infinity;
         let vmax = -Infinity;
 
-        for (let v of this.vertices) {
-
+        // Bounding Box im UV-Raum bestimmen
+        for (const v of this.vertices) {
             switch (ali) {
-
-                // YZ
-                case 0:
+                case XAXIS: // YZ
                     umin = Math.min(umin, v.world.y);
                     umax = Math.max(umax, v.world.y);
 
@@ -1283,8 +1272,7 @@ class Polygon extends PrimitiveBase {
                     vmax = Math.max(vmax, v.world.z);
                     break;
 
-                // XZ
-                case 1:
+                case YAXIS: // XZ
                     umin = Math.min(umin, v.world.x);
                     umax = Math.max(umax, v.world.x);
 
@@ -1292,8 +1280,7 @@ class Polygon extends PrimitiveBase {
                     vmax = Math.max(vmax, v.world.z);
                     break;
 
-                // XY
-                case 2:
+                case ZAXIS: // XY
                     umin = Math.min(umin, v.world.x);
                     umax = Math.max(umax, v.world.x);
 
@@ -1303,69 +1290,71 @@ class Polygon extends PrimitiveBase {
             }
         }
 
-        let tumin = umin * vscale;
-        let tumax = umax * vscale;
-        let tvmin = vmin * vscale;
-        let tvmax = vmax * vscale;
+        // WICHTIG:
+        // Die Weltkoordinaten werden NICHT skaliert!
+        const u0 = umin;
+        const u1 = umax;
+        const v0 = vmin;
+        const v1 = vmax;
 
-        let norm = this.plane.normal;
-        let d = this.plane.D;
+        const n = this.plane.normal;
+        const d = this.plane.D;
 
-        let x = 0;
-        let y = 0;
-        let z = 0;
-
-        let vect1;
-        let vect2;
+        let p00, p10, p01;
 
         switch (ali) {
+            //---------------------------------------------------
+            // Dominante X-Achse -> Projektion auf YZ
+            //---------------------------------------------------
+            case XAXIS:
+                {
+                    const x00 = -(n.y * u0 + n.z * v0 + d) / n.x;
+                    const x10 = -(n.y * u1 + n.z * v0 + d) / n.x;
+                    const x01 = -(n.y * u0 + n.z * v1 + d) / n.x;
 
-            // YZ
-            case 0:
+                    p00 = new Vector3(x00, u0, v0);
+                    p10 = new Vector3(x10, u1, v0);
+                    p01 = new Vector3(x01, u0, v1);
+                    break;
+                }
 
-                x = (norm.z * tumin + norm.y * tvmin + d) / norm.x;
-                this.m_uvvector = new Vector3(x, tumin, tvmin);
+            //---------------------------------------------------
+            // Dominante Y-Achse -> Projektion auf XZ
+            //---------------------------------------------------
+            case YAXIS:
+                {
+                    const y00 = -(n.x * u0 + n.z * v0 + d) / n.y;
+                    const y10 = -(n.x * u1 + n.z * v0 + d) / n.y;
+                    const y01 = -(n.x * u0 + n.z * v1 + d) / n.y;
 
-                x = (norm.z * tvmin + norm.y * tumax + d) / norm.x;
-                vect1 = new Vector3(x, tumax, tvmin);
+                    p00 = new Vector3(u0, y00, v0);
+                    p10 = new Vector3(u1, y10, v0);
+                    p01 = new Vector3(u0, y01, v1);
+                    break;
+                }
 
-                x = (norm.z * tumin + norm.y * tvmax + d) / norm.x;
-                vect2 = new Vector3(x, tumin, tvmax);
+            //---------------------------------------------------
+            // Dominante Z-Achse -> Projektion auf XY
+            //---------------------------------------------------
+            case ZAXIS:
+                {
+                    const z00 = -(n.x * u0 + n.y * v0 + d) / n.z;
+                    const z10 = -(n.x * u1 + n.y * v0 + d) / n.z;
+                    const z01 = -(n.x * u0 + n.y * v1 + d) / n.z;
 
-                break;
-
-            // XZ
-            case 1:
-
-                y = (norm.x * tumin + norm.z * tvmin + d) / norm.y;
-                this.m_uvvector = new Vector3(tumin, y, tvmin);
-
-                y = (norm.x * tumax + norm.z * tvmin + d) / norm.y;
-                vect1 = new Vector3(tumax, y, tvmin);
-
-                y = (norm.x * tumin + norm.z * tvmax + d) / norm.y;
-                vect2 = new Vector3(tumin, y, tvmax);
-
-                break;
-
-            // XY
-            case 2:
-
-                z = (norm.x * tumin + norm.y * tvmin + d) / norm.z;
-                this.m_uvvector = new Vector3(tumin, tvmin, z);
-
-                z = (norm.x * tumax + norm.y * tvmin + d) / norm.z;
-                vect1 = new Vector3(tumax, tvmin, z);
-
-                z = (norm.x * tumin + norm.y * tvmax + d) / norm.z;
-                vect2 = new Vector3(tumin, tvmax, z);
-
-                break;
+                    p00 = new Vector3(u0, v0, z00);
+                    p10 = new Vector3(u1, v0, z10);
+                    p01 = new Vector3(u0, v1, z01);
+                    break;
+                }
         }
 
-        this.m_edge1 = vect1.sub(this.m_uvvector);
-        this.m_edge2 = vect2.sub(this.m_uvvector);
+        this.m_uvvector = p00;
+        this.m_edge1 = p10.sub(p00);
+        this.m_edge2 = p01.sub(p00);
     }
+
+
 
     get edge1() { return this.m_edge1; }
     get edge2() { return this.m_edge2; }
@@ -1378,33 +1367,103 @@ class Polygon extends PrimitiveBase {
     RayPolygonDistance(start, end) {
 
         let ray = new Ray(start, end);
-        let o = this.plane.intersect(new Ray(start, end));
+        let o = this.plane.intersect(ray);
         if (!o[0]) return -1;
         let t = Math.abs(o[1]);
 
 
-        let np = ray.normal.mul(t).add(start);
+        let np = ray.normal.mul(t).add(ray.origin);
         if (!this.PointInPolygon(np)) return -1;
         return t;
     }
 
+    RayPolygonDistance2(ray) {
+
+
+        let o = this.plane.intersect(ray);
+        if (!o[0]) return -1;
+        let t = Math.abs(o[1]);
+
+
+        let np = ray.normal.mul(t).add(ray.origin);
+        if (!this.PointInPolygon(np)) return -1;
+        return t;
+    }
+    /*
+        PointInPolygon(point) {
+            const EPSILON = 0.1;//1e-6;
+            const normal = this.plane.normal;
+    
+            for (let i = 0; i < this.vertices.length; i++) {
+                const a = this.vertices[i].world;
+                const b = this.vertices[(i + 1) % this.vertices.length].world;
+    
+                const edge = b.sub(a);
+                const toPoint = point.sub(a);
+    
+                if (edge.cross(toPoint).dot(normal) < -EPSILON)
+                    return false;
+            }
+    
+            return true;
+        }
+    */
+
     PointInPolygon(point) {
-        const EPSILON = 1e-6;
-        const normal = this.plane.normal;
+        const n = this.plane.normal;
+        const ax = Math.abs(n.x), ay = Math.abs(n.y), az = Math.abs(n.z);
 
-        for (let i = 0; i < this.vertices.length; i++) {
-            const a = this.vertices[i].world;
-            const b = this.vertices[(i + 1) % this.vertices.length].world;
-
-            const edge = b.sub(a);
-            const toPoint = point.sub(a);
-
-            if (edge.cross(toPoint).dot(normal) < -EPSILON)
-                return false;
+        // Achse mit größter Normalen-Komponente weglassen -> beste 2D-Projektion
+        let u, v;
+        if (ax >= ay && ax >= az) {
+            u = 'y'; v = 'z';
+        } else if (ay >= ax && ay >= az) {
+            u = 'x'; v = 'z';
+        } else {
+            u = 'x'; v = 'y';
         }
 
-        return true;
+        const px = point[u], py = point[v];
+        let inside = false;
+        const n_verts = this.vertices.length;
+
+        for (let i = 0, j = n_verts - 1; i < n_verts; j = i++) {
+            const vi = this.vertices[i].world;
+            const vj = this.vertices[j].world;
+
+            const xi = vi[u], yi = vi[v];
+            const xj = vj[u], yj = vj[v];
+
+            const intersect = ((yi > py) !== (yj > py)) &&
+                (px < (xj - xi) * (py - yi) / (yj - yi) + xi);
+
+            if (intersect) inside = !inside;
+        }
+
+        return inside;
     }
+
+    SegmentPolygonDistance(start, end) {
+        const ray = new Ray(start, end);
+        const o = this.plane.intersect(ray);
+        if (!o[0]) return -1; // parallel zur Ebene oder kein Schnitt
+
+        const t = o[1]; // Achtung: KEIN Math.abs()!
+
+        // Schnittpunkt muss zwischen start (t=0) und end (t=segmentLength) liegen
+        const segmentLength = end.sub(start).length();
+
+        if (t < -1e-6 || t > segmentLength + 1e-6) return -1;
+
+        const hitPoint = ray.normal.mul(t).add(start);
+
+        if (!this.PointInPolygon(hitPoint)) return -1;
+
+        return t; // Distanz von start bis zum Treffpunkt
+    }
+
+
+
 
 }
 class IndexedObject extends PrimitiveBase {

@@ -109,8 +109,8 @@ class Ray {
     }
 
     calc(o, v) {
-        this.origin = o;
-        this.vector = v;
+        this._origin = new Vector3(o);
+        this._vector = new Vector3(v);;
 
         this._nCalculated = false;
         this._lCalculated = false;
@@ -242,6 +242,22 @@ class Ray {
 
         return o;
     }
+
+    intersect3(r) {
+
+        let time = 0.0;
+        var denom = this.normal.dot(r.normal);
+
+        if (denom == 0) return -1;
+
+        let numer = this.normal.dot(r.origin);
+
+        return -((numer + this.D) / denom);
+
+
+    }
+
+
 
     intersect2(start, end) {
         let o = this.intersect(new Ray(start, end));

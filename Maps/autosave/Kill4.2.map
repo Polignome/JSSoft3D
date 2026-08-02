@@ -702,43 +702,34 @@
 // entity 2
 {
 "classname" "light"
-"_light" "255 0 128 30"
-"style" "0"
-"_fade" "1.0"
-"_falloff" "0"
-"origin" "184 216 120"
-}
-// entity 3
-{
-"classname" "light"
-"_light" "0 255 128 30"
+"_light" "0 255 128 10s"
 "style" "0"
 "_fade" "1.0"
 "_falloff" "0"
 "origin" "56 -184 120"
 }
-// entity 4
+// entity 3
 {
 "classname" " "
-"_light" "255 0 128 30"
+"_light" "255 0 128 200"
 "style" "0"
 "_fade" "1.0"
 "_falloff" "0"
 "origin" "-136 -184 120"
 }
-// entity 5
+// entity 4
 {
 "classname" "light"
-"_light" "255 255 128 30"
+"_light" "255 255 128 200"
 "style" "0"
 "_fade" "1.0"
 "_falloff" "0"
 "origin" "-40 -136 -88"
 }
-// entity 6
+// entity 5
 {
 "classname" "light"
-"_light" "255 255 128 30"
+"_light" "255 255 128 200"
 "style" "0"
 "_fade" "1.0"
 "_falloff" "0"

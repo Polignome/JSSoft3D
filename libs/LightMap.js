@@ -97,39 +97,64 @@ class BigLightMap extends Canvas {
 
         return f * f;
     }
+
+
     ProcessPoly(source, polygons = null, light_sources) {
         for (let light of light_sources) {
+
+            // BACK-Test vorerst deaktivieren
             if (source.plane.Classify(light.pos) === BACK) continue;
+
             for (let ix = 0; ix < source._light_map_width; ix++) {
                 for (let iy = 0; iy < source._light_map_height; iy++) {
 
-                    let ufactor = (ix) / (source._light_map_width - 1);
-                    let vfactor = (iy) / (source._light_map_height - 1);
+                    let ufactor = (ix) / (source._light_map_width);
+                    let vfactor = (iy) / (source._light_map_height);
 
-                    let lumel =
-                        source.uvvector
-                            .add(source.edge1.mul(ufactor))
-                            .add(source.edge2.mul(vfactor));
+                    let lumel = source.uvvector
+                        .add(source.edge1.mul(ufactor))
+                        .add(source.edge2.mul(vfactor));
 
-                    //   if (!source.PointInPolygon(lumel)) continue;
-                    let dist = lumel.sub(light.pos).length()
+                    //if (!source.PointInPolygon(lumel)) { continue; }
 
-                    let hit = true;
+                    let dist = lumel.sub(light.pos).length();
+
+                    if (dist > light.radius) continue;
+
+                    let pray = new Ray(light.pos, lumel);
+
+                    let hit = false;
                     for (let p of polygons) {
-                        if (p === source) continue; // Polygon nicht gegen sich selbst testen
-                        //let r = p.RayPolygonDistance(lumel, light.pos);
-                        //let r = p.plane.intersect2(lumel, light.pos);
-                        let r = p.RayPolygonDistance(lumel, light.pos);
+                        if (p === source) continue;
+                        if (p.plane.Classify(light.pos) === BACK) continue;
+                        let r = p.RayPolygonDistance2(pray);
+
                         if (r === -1) continue
-                        if (r < dist) { hit = false; break; }
+
+                        if (r < dist) {
+                            console.log(r, dist)
+                            hit = true;
+                            break;
+                        }
+
+                        /*
+                        
+                            let r = p.SegmentPolygonDistance(lumel, light.pos)
+    
+                            if (r === -1) continue;
+                            if (r < dist) {
+                                console.log("Hit")
+                                hit = true;
+                                break;
+                            }
+                                */
                     }
-
-                    if (!hit) continue;
-
-                    let intensity = light.color.w * 2 / (dist/* * dist + 64*/);
+                    if (hit) continue
 
 
-                    //dist = 255 - Math.min(dist, 255)
+                    let intensity = light.color.w / dist/*(dist * dist + 1);*/
+                    //  let intensity = light.color.w / (dist * dist + 1);
+
                     let rr = Math.min((intensity * light.color.x) | 0, 255)
                     let gg = Math.min((intensity * light.color.y) | 0, 255)
                     let bb = Math.min((intensity * light.color.z) | 0, 255)
@@ -145,12 +170,9 @@ class BigLightMap extends Canvas {
                     gg = Math.min((gg + cg) | 0, 255);
                     bb = Math.min((bb + cb) | 0, 255);
 
-                    //                    this.PutPixel(xx, yy, RGB(rr, gg, bb));
                     this.PutPixel(xx, yy, RGB(rr, gg, bb));
-
-
-
-
+                    //                    this.PutPixel(xx, yy, RGB(rr, gg, bb));
+                    //  this.PutPixel(xx, yy, RGB(255 - Math.min(dist | 0, 255), 255 - Math.min(dist | 0, 255), 255 - Math.min(dist | 0, 255)));
                 }
             }
         }

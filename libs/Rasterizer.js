@@ -39,7 +39,7 @@ class Rasterizer {
     this._use_BVH = true;
     this._use_zbuffer = true;
     this._enable_culling = false;    //0=culling off 1==backface culling
-
+    this._abient_light = new Vector3(0.5, 0.5, 0.5);
 
     this._xScale = 1;//0.0198;
     this._yScale = 1;//0.0170;
