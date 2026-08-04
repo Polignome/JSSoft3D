@@ -362,6 +362,7 @@ class Span {
                                         let b = RGBToBlue(front) * Math.min(rasterizer._abient_light.z + RGBToBlue(lc), 1.0);
                     */
                     front = RGB(r, g, b);
+                    // front = RGB(lr, lg, lb);
 
                 }
 

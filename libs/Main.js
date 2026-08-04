@@ -72,8 +72,8 @@ function InitCamera() {
 	cam.fov = FOV * 3.14159265359 / 180;
 	cam.near = 0.001;
 	cam.far = 10000;
-	cam.LookAt(new Vector3(0, 0, 0));
-	cam.position = new Vector3(0, 0, -10);
+	cam.LookAt(new Vector3(-0.01, 0.25, -1));
+	cam.position = new Vector3(36, 265, -460);
 }
 
 function Sig(key) {
@@ -218,6 +218,7 @@ function Update() {
 	this.UpdateMouse();
 
 
+
 	if (mouse_key & MOUSE_BUTTON_MIDDLE) {
 		console.log("MAUSE MITTE")
 		test_polygon = null;
@@ -328,19 +329,41 @@ function LoadMap() {
 			m_map_compiler = new MapCompiler();
 			m_map_compiler.CompileFromString(text, compiler_options);
 
+
 			if (m_map_compiler.brush_list) {
 				for (let b of m_map_compiler.brush_list) rasterizer.AddPrimitive(b.primitives);
 				//	rasterizer.BuildBVH();
 			}
 
-			/*      if (m_map_compiler.polylist) {
-					  rasterizer.AddPrimitive(m_map_compiler.polylist);
-					  rasterizer.BuildBVH();
-				  }
-			  */
+
 			if (m_map_compiler.bsp) {
+				let polys = m_map_compiler.bsp.ExtractPrimsNoCopy();
 				biglightmap.Clear();
-				biglightmap.CalcLightmap(m_map_compiler.bsp.ExtractPrimsNoCopy(), m_map_compiler.lights);
+				biglightmap.CalcLightmap(polys, m_map_compiler.lights);
+				let radio = new PatchGenerator();
+
+				let patches = radio.Generate(polys)
+
+				let lightPatch = patches[0];
+
+				lightPatch.emission =
+					new Vector3(10, 10, 10);
+
+				lightPatch.energy =
+					new Vector3(10, 10, 10);
+
+				lightPatch.unshotEnergy =
+					new Vector3(10, 10, 10);
+
+
+				let radiosity = new Radiosity(patches, polys);
+
+				radiosity.InitializeLights(m_map_compiler.lights);
+
+
+				// rechnen
+				radiosity.Solve(150);
+				radiosity.ApplyToLightmap();
 
 				pvs = m_map_compiler.pvs;
 				//	 m_merger= new CellMerger(m_map_compiler.bsp);

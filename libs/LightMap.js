@@ -113,7 +113,7 @@ class BigLightMap extends Canvas {
                     polys.push(p);
                 }
             }
-            console.log("Help -> ", polys.length)
+
             for (let ix = 0; ix < source._light_map_width; ix++) {
                 for (let iy = 0; iy < source._light_map_height; iy++) {
 
