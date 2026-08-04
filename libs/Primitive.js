@@ -1444,7 +1444,7 @@ class Polygon extends PrimitiveBase {
 
     BlurLightmap() {
         if (!this._ltexture) return;
-        this._ltexture.BlurRegion(p._light_map_posx, p._light_map_posy, p._light_map_width, p._light_map_height)
+        this._ltexture.BlurRegion(this._light_map_posx, this._light_map_posy, this._light_map_width, this._light_map_height)
     }
 
 

@@ -372,6 +372,12 @@ function DoRad() {
 
 
 }
+
+function Blur() {
+	let polys = m_map_compiler.bsp.ExtractPrimsNoCopy();
+	for (let p of polys) p.BlurLightmap();
+
+}
 function LoadWad() {
 
 	var input = document.createElement('input');
