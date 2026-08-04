@@ -1442,7 +1442,10 @@ class Polygon extends PrimitiveBase {
         return t; // Distanz von start bis zum Treffpunkt
     }
 
-
+    BlurLightmap() {
+        if (!this._ltexture) return;
+        this._ltexture.BlurRegion(p._light_map_posx, p._light_map_posy, p._light_map_width, p._light_map_height)
+    }
 
 
 }

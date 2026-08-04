@@ -340,30 +340,6 @@ function LoadMap() {
 				let polys = m_map_compiler.bsp.ExtractPrimsNoCopy();
 				biglightmap.Clear();
 				biglightmap.CalcLightmap(polys, m_map_compiler.lights);
-				let radio = new PatchGenerator();
-
-				let patches = radio.Generate(polys)
-
-				let lightPatch = patches[0];
-
-				lightPatch.emission =
-					new Vector3(10, 10, 10);
-
-				lightPatch.energy =
-					new Vector3(10, 10, 10);
-
-				lightPatch.unshotEnergy =
-					new Vector3(10, 10, 10);
-
-
-				let radiosity = new Radiosity(patches, polys);
-
-				radiosity.InitializeLights(m_map_compiler.lights);
-
-
-				// rechnen
-				radiosity.Solve(150);
-				radiosity.ApplyToLightmap();
 
 				pvs = m_map_compiler.pvs;
 				//	 m_merger= new CellMerger(m_map_compiler.bsp);
@@ -381,7 +357,21 @@ function LoadMap() {
 
 	input.click();
 }
+function DoRad() {
+	console.log("DoRad")
+	let polys = m_map_compiler.bsp.ExtractPrimsNoCopy();
 
+	let radio = new PatchGenerator();
+	let patches = radio.Generate(polys)
+	let radiosity = new Radiosity(patches, polys);
+
+	radiosity.InitializeLights(m_map_compiler.lights);
+	// rechnen
+	radiosity.Solve(2);
+	radiosity.ApplyToLightmap();
+
+
+}
 function LoadWad() {
 
 	var input = document.createElement('input');

@@ -98,6 +98,23 @@ class BigLightMap extends Canvas {
         return f * f;
     }
 
+    LightFalloff(distance, radius) {
+        if (distance >= radius)
+            return 0;
+
+        let t = distance / radius; // 0 (Lichtquelle) .. 1 (Rand)
+
+        // Exponentieller Abfall für weichen Kernbereich...
+        let exponential = Math.exp(-t * t * 4);
+
+        // ...kombiniert mit sanftem Ausblenden zum Rand hin (smoothstep),
+        // damit es am radius nicht hart abschneidet
+        let edge = 1 - t * t * (3 - 2 * t);
+
+        return exponential * edge;
+    }
+
+
     ProcessPoly(source, polygons = null, light_sources) {
         for (let light of light_sources) {
 
@@ -128,7 +145,7 @@ class BigLightMap extends Canvas {
 
                     let dist = lumel.sub(light.pos).length();
 
-                    if (dist > light.radius * 2) continue;
+                    if (dist > light.radius) continue;
 
                     let pray = new Ray(light.pos, lumel.sub(light.pos));
 
@@ -150,8 +167,11 @@ class BigLightMap extends Canvas {
                     }
                     if (hit) continue
 
+                    let falloff = this.LightFalloff(dist, light.radius);
+                    if (falloff <= 0) continue;
 
-                    let intensity = light.color.w / dist//(dist * dist + 1);
+                    let intensity = light.color.w * falloff;
+                    //let intensity = light.color.w / dist//(dist * dist + 1);
                     //  let intensity = light.color.w / (dist * dist + 1);
 
                     let rr = Math.min((intensity * light.color.x) | 0, 255)
@@ -176,7 +196,6 @@ class BigLightMap extends Canvas {
             }
         }
     }
-
 
 
 
