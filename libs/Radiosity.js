@@ -67,7 +67,7 @@ class Patch {
 }
 
 class PatchGenerator {
-    constructor(patchSize = 4) {
+    constructor(patchSize = 8) {
         this.patchSize = patchSize;
         this.patches = [];
     }

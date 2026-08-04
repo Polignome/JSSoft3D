@@ -357,11 +357,11 @@ function LoadMap() {
 
 	input.click();
 }
-function DoRad() {
+function DoRad(psize) {
 	console.log("DoRad")
 	let polys = m_map_compiler.bsp.ExtractPrimsNoCopy();
 
-	let radio = new PatchGenerator();
+	let radio = new PatchGenerator(psize);
 	let patches = radio.Generate(polys)
 	let radiosity = new Radiosity(patches, polys);
 

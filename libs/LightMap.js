@@ -198,79 +198,148 @@ class BigLightMap extends Canvas {
     }
 
 
+    /*
+        CalcLightmap(polygons, lights, max_texture_scale = 64) {
+            let maxw = -Infinity;
+            let maxh = -Infinity;
+            this.rec = new Rect(0, 0, this._width, this._height);
+            this.root = new LightMapPartitionMode(this.rec);
+            this.leafs = [];
+            for (let p of polygons) {
+                let uv = p.Get2DBBox();
+                let tw = uv.width();
+                let th = uv.height();
+    
+                if (tw > maxw) maxw = tw;
+                if (th > maxh) maxh = th;
+    
+            }
+    
+            const sw = max_texture_scale / maxw;
+            const sh = max_texture_scale / maxh;
+    
+    
+            for (let p of polygons) {
+                let uv = p.Get2DBBox();
+                let tw = uv.width();
+                let th = uv.height();
+    
+    
+    
+                let lw = this.convertToPot(tw * sw, max_texture_scale);
+                let lh = this.convertToPot(th * sh, max_texture_scale);
+    
+                let leaf = this.root.Build(lw, lh, this);
+    
+                if (!leaf) {
+                    break;
+                }
+                p._light_map_posx = leaf.rect.left;
+                p._light_map_posy = leaf.rect.top;
+                p._light_map_width = leaf.rect.width;
+                p._light_map_height = leaf.rect.height;
+    
+                p.setPlanarLightTexture(0, 0, 1, 1);
+                p.CalcLightMapParm();
+    
+    
+    
+    
+                p._ltexture = this;
+    
+                for (let x = 0; x < p._light_map_width; x++) {
+                    for (let y = 0; y < p._light_map_height; y++) {
+                        this.PutPixel(p._light_map_posx + x, p._light_map_posy + y, RGB(0, 0, 0));
+    
+                    }
+                }
+    
+                let x0 = p._light_map_posx
+                let y0 = p._light_map_posy
+                let x1 = p._light_map_posx + p._light_map_width
+                let y1 = p._light_map_posy + p._light_map_height
+    
+                this.ProcessPoly(p, polygons, lights)
+                this.BlurRegion(x0, y0, p._light_map_width, p._light_map_height)
+                // this.DrawRec(x0, y0, x0 + 5, y0 + 5, RGB(255, 255, 0))
+                // this.DrawRec(x1 - 5, y1 - 5, x1 - 1, y1 - 1, RGB(255, 255, 255))
+    
+    
+                //    this.DrawLine(x0, y0, x1, y1, RGB(255, 255, 0))
+                //    this.DrawLine(x0, y1, x1, y0, RGB(255, 255, 0))
+            }
+    
+    
+    
+        }
+    */
 
-    CalcLightmap(polygons, lights, max_texture_scale = 64) {
-        let maxw = -Infinity;
-        let maxh = -Infinity;
+
+
+
+    CalcLightmap(polygons, lights, max_texture_scale = 32 * 2) {
+
         this.rec = new Rect(0, 0, this._width, this._height);
         this.root = new LightMapPartitionMode(this.rec);
         this.leafs = [];
-        for (let p of polygons) {
-            let uv = p.Get2DBBox();
-            let tw = uv.width();
-            let th = uv.height();
-
-            if (tw > maxw) maxw = tw;
-            if (th > maxh) maxh = th;
-
-        }
-
-        const sw = max_texture_scale / maxw;
-        const sh = max_texture_scale / maxh;
-
 
         for (let p of polygons) {
+
             let uv = p.Get2DBBox();
-            let tw = uv.width();
-            let th = uv.height();
 
+            let tw = Math.max(1, uv.width());
+            let th = Math.max(1, uv.height());
 
+            // Größte Seite auf max_texture_scale begrenzen
+            let scale = max_texture_scale / Math.max(tw, th);
 
-            let lw = this.convertToPot(tw * sw, max_texture_scale);
-            let lh = this.convertToPot(th * sh, max_texture_scale);
+            let lw = Math.max(4, Math.round(tw * scale));
+            let lh = Math.max(4, Math.round(th * scale));
+
+            lw = this.convertToPot(lw, max_texture_scale);
+            lh = this.convertToPot(lh, max_texture_scale);
 
             let leaf = this.root.Build(lw, lh, this);
 
             if (!leaf) {
+                console.warn("Lightmap atlas voll.");
                 break;
             }
+
             p._light_map_posx = leaf.rect.left;
             p._light_map_posy = leaf.rect.top;
             p._light_map_width = leaf.rect.width;
             p._light_map_height = leaf.rect.height;
 
-            p.setPlanarLightTexture(0, 0, 1, 1);/*leaf.ushift, leaf.vshift, leaf.uscale, leaf.vscale);*/
+            p.setPlanarLightTexture(0, 0, 1, 1);
             p.CalcLightMapParm();
-
-
-
 
             p._ltexture = this;
 
+            // Lightmap löschen
             for (let x = 0; x < p._light_map_width; x++) {
                 for (let y = 0; y < p._light_map_height; y++) {
-                    this.PutPixel(p._light_map_posx + x, p._light_map_posy + y, RGB(0, 0, 0));
-
+                    this.PutPixel(
+                        p._light_map_posx + x,
+                        p._light_map_posy + y,
+                        RGB(0, 0, 0)
+                    );
                 }
             }
 
-            let x0 = p._light_map_posx
-            let y0 = p._light_map_posy
-            let x1 = p._light_map_posx + p._light_map_width
-            let y1 = p._light_map_posy + p._light_map_height
+            let x0 = p._light_map_posx;
+            let y0 = p._light_map_posy;
 
-            this.ProcessPoly(p, polygons, lights)
-            this.BlurRegion(x0, y0, p._light_map_width, p._light_map_height)
-            // this.DrawRec(x0, y0, x0 + 5, y0 + 5, RGB(255, 255, 0))
-            // this.DrawRec(x1 - 5, y1 - 5, x1 - 1, y1 - 1, RGB(255, 255, 255))
+            this.ProcessPoly(p, polygons, lights);
 
-
-            //    this.DrawLine(x0, y0, x1, y1, RGB(255, 255, 0))
-            //    this.DrawLine(x0, y1, x1, y0, RGB(255, 255, 0))
+            this.BlurRegion(
+                x0,
+                y0,
+                p._light_map_width,
+                p._light_map_height
+            );
         }
-
-
-
     }
+
 
 }
